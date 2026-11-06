@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "W55HSrhb9nE=",
+  "success": true,
+  "projectFilePath": "E:\\code\\VolSync\\Spike\\Spike.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\vladi\\.nuget\\packages\\naudio.core\\2.2.1\\naudio.core.2.2.1.nupkg.sha512",
+    "C:\\Users\\vladi\\.nuget\\packages\\naudio.wasapi\\2.2.1\\naudio.wasapi.2.2.1.nupkg.sha512"
+  ],
+  "logs": []
+}
