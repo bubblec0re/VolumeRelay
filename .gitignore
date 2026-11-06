@@ -1,0 +1,7 @@
+# local .NET SDK install (not project source)
+.dotnet/
+
+# build output
+bin/
+obj/
+dist/
