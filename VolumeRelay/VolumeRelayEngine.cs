@@ -25,13 +25,13 @@ public class VolumeRelayEngine : IDisposable
 {
     const float DefaultPin = 0.98f;
 
-    /// <summary>
-    /// How far the pipe may sit from the pin and still count as a hotkey detent.
-    /// One detent is 0.02 (measured); the margin absorbs a coalesced pair. Detents
-    /// were measured to never coalesce, so any larger displacement is somebody
-    /// setting an absolute level rather than nudging.
-    /// </summary>
-    const float KnobStepTolerance = 0.05f;
+    // Measured, and relied upon below: the knob (HID volume keys, handled by the
+    // shell) moves the pipe in exact 0.02 steps and passes NO event context,
+    // while every UI that sets a level of its own passes one. So a context means
+    // "something set a level" and its absence means "a hotkey nudged it".
+    // If knob turns ever start jumping the target to full volume, this is the
+    // assumption that broke; the fix is the shape test in the commit history.
+
     const float Epsilon = 0.001f;
     const int SuppressWindowMs = 500;
 
@@ -287,17 +287,13 @@ public class VolumeRelayEngine : IDisposable
             if (volumeChanged)
             {
                 // A slider position is an absolute level; a knob detent is a
-                // relative step. Detected by size, not by the caller's event-context
-                // GUID: those GUIDs are per-caller and undocumented (the flyout and
-                // the Settings app use different ones), so a whitelist would need
-                // every UI surface enumerated forever. A detent can only ever land
-                // one step from the pin, which no UI drag ever does.
-                //
-                // The context check is the safety net: a hotkey change carries no
-                // context, so even a coalesced multi-detent event stays relative.
-                // Reading one as absolute could jump the target to full volume.
-                bool knobSized = Math.Abs(newVol - _pinValue) <= KnobStepTolerance;
-                bool fromSlider = data.EventContext != Guid.Empty && !knobSized;
+                // relative step. The GUID values themselves are per-caller and
+                // undocumented (the flyout and the Settings app each use their
+                // own), but we never compare values - only presence, which is
+                // exactly what separates "a UI set this level" from "a hotkey
+                // nudged it". Enumerating GUIDs would mean listing every volume
+                // UI that will ever exist.
+                bool fromSlider = data.EventContext != Guid.Empty;
                 float delta = newVol - _lastPipeVolume;
                 _lastPipeVolume = newVol;
 

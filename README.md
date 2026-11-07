@@ -27,14 +27,16 @@ So the physical device holds the real 0–100% range, the pipe stays audibly tra
 
 ### Telling the slider from the knob
 
-Both arrive as the same WASAPI notification, carrying only the new volume — so the two are separated by *shape*, not by who sent them:
+Both arrive as the same WASAPI notification, carrying only the new volume — but not quite: a UI that sets a level of its own passes an **event-context GUID**, while the HID volume keys (the knob) pass **none**. So the *presence* of a context is what separates "something set this level" from "a hotkey nudged it":
 
-- a **knob detent** can only move the pipe to one step either side of the pin (0.02, and detents were measured never to coalesce), so it lands with **no event context**;
-- anything setting an **absolute level** lands anywhere, and carries an event context.
+| Notification | Meaning | Applied as |
+|---|---|---|
+| has an event context | a UI set this level | absolute — target := value |
+| no event context | a hotkey detent | relative — target += step |
 
-So a change within one step of the pin, with no context, is a relative step; everything else is an absolute set. Identifying it by shape rather than by the caller's GUID matters because those GUIDs are **per-caller and undocumented** — the taskbar flyout and the Settings app each use a different one — so a whitelist would have to enumerate every volume UI forever.
+The GUID *values* are per-caller and undocumented — the taskbar flyout and the Settings app each use their own — so they are never compared, only tested for presence. That is also why a volume UI nobody has written yet works without touching this code.
 
-The context check stays as a safety net: a hotkey change never carries one, so even a coalesced multi-detent event remains relative. Reading a knob step as absolute could jump the target straight to full volume.
+The rule rests on one measured assumption: **the knob always passes an empty context.** If a knob turn ever jumps the target to full volume, that assumption is what broke.
 
 ### Why 98% and not 100%
 
