@@ -45,12 +45,26 @@ The app lives entirely in the tray. **Right-click** the icon for:
 | Item | Meaning |
 |---|---|
 | **Auto** | Follow whatever device SteelSeries GG is currently routing all render channels to |
-| **device names** | Pin one specific output device. Only **physical** outputs are listed — virtual endpoints are never valid targets (a virtual device must not route into another one) |
+| **device names** | Pin one specific output device. Only **physical** outputs are listed — see below |
 | **Pause sync / Resume sync** | Go fully passive — the pipe behaves natively, nothing is pinned or redirected |
 | **Start with Windows** | Toggle auto-start; the checkmark reflects the actual `HKCU\...\Run` entry |
 | **Exit** | Quit |
 
 Hovering the icon shows the current target and its volume, or why there is no target.
+
+### Which devices are listed
+
+Only **physical** outputs appear in the menu — a virtual device is never a valid target, and the default/virtual pipe is itself virtual.
+
+Virtual devices are recognised from the device's **HardwareIds**, not its name. Windows enumerates software audio devices on the `ROOT` bus, while real hardware always sits on a physical bus:
+
+| Device | HardwareIds |
+|---|---|
+| SteelSeries Sonar - Gaming (virtual) | `{1}.ROOT\MEDIA\0000` |
+| Headphones (Arctis Nova 7X) | `{1}.USB\VID_1038&PID_22A5&MI_00\…` |
+| AG273QS3R4 (NVIDIA HD Audio) | `{1}.HDAUDIO\FUNC_01&VEN_10DE&…` |
+
+So a real device that happens to be *named* "Sonar Pro" or "CABLE Link" is still listed, and a virtual driver with an unfamiliar name (NVIDIA Broadcast, Elgato Wave Link, Dante, …) is still hidden. Name heuristics are only a fallback for the rare case where the property store cannot be read.
 
 ### Target selection rules
 

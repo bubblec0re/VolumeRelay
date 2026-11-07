@@ -4,6 +4,32 @@ using NAudio.CoreAudioApi;
 
 var mode = args.Length > 0 ? args[0] : "table";
 
+if (mode == "hwid")
+{
+    var en = new MMDeviceEnumerator();
+    var def = en.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console).ID;
+    foreach (var d in en.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+    {
+        Console.WriteLine((d.ID == def ? "[DEFAULT] " : "          ") + d.FriendlyName);
+        Console.WriteLine("            store count = " + d.Properties.Count);
+        var key = new PropertyKey(new Guid("b3f8fa53-0004-438e-9003-51a46e139bfc"), 2);
+        string hw;
+        try
+        {
+            var prop = d.Properties[key];
+            var v = prop.Value;
+            hw = v == null ? "<null>" : (v is System.Collections.IEnumerable e2 && !(v is string)
+                 ? string.Join(" | ", e2.Cast<object>().Select(o => o?.ToString() ?? "null"))
+                 : v.ToString()!);
+        }
+        catch (Exception ex) { hw = "<ERR " + ex.GetType().Name + ": " + ex.Message + ">"; }
+        Console.WriteLine("            HardwareIds[" + key.formatId + "," + key.propertyId + "] = " + hw);
+    }
+    return;
+}
+
+
+
 if (mode == "probe")
 {
     // Compare creation paths in the same process.
@@ -230,7 +256,6 @@ if (mode == "setdev")
     return;
 }
 
-if (mode == "watchdefault")
 if (mode == "watchdefault")
 {
     // Spike: register an IMMNotificationClient; watch for default-device changes + add/remove.
