@@ -28,7 +28,7 @@ public static class DeviceHelper
                 try
                 {
                     var name = device.FriendlyName;
-                    var isVirtual = name.Contains("Virtual Audio Device", StringComparison.OrdinalIgnoreCase);
+                    var isVirtual = LooksVirtual(name);
                     devices.Add(new DeviceInfo(device.ID, name, isVirtual, device.ID == defaultId));
                 }
                 catch { }
@@ -38,4 +38,25 @@ public static class DeviceHelper
 
         return (defaultId, devices);
     }
+
+    /// <summary>
+    /// Virtual endpoints are recognised by name: Windows exposes no stable
+    /// "is virtual" flag, and the property-store HardwareIds heuristic
+    /// (ROOT\...) is not reachable through NAudio here. These markers cover
+    /// the virtual audio drivers actually in use. Virtual endpoints are never
+    /// offered as targets — a virtual device must not route into another one.
+    /// </summary>
+    static readonly string[] VirtualMarkers =
+    {
+        "Virtual Audio Device",
+        "SteelSeries Sonar",
+        "VB-Audio",
+        "Virtual Cable",
+        "CABLE Input",
+        "CABLE Output",
+        "VoiceMeeter",
+    };
+
+    static bool LooksVirtual(string name)
+        => VirtualMarkers.Any(m => name.Contains(m, StringComparison.OrdinalIgnoreCase));
 }

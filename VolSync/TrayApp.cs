@@ -75,9 +75,18 @@ public class TrayApp : Form
     {
         var menu = new ContextMenuStrip();
         menu.Items.Add(MakeTargetItem("auto", "Auto — follow GG's selection"));
+
+        // Only physical outputs are offered: a virtual device must never route
+        // into another virtual device, and the default/virtual pipe is itself
+        // virtual, so it must not be selectable as a target either.
+        var physical = _engine.Devices.Where(d => !d.IsVirtual).ToList();
         menu.Items.Add(new ToolStripSeparator());
-        foreach (var d in _engine.Devices)
-            menu.Items.Add(MakeTargetItem(d.Id, d.Display));
+        if (physical.Count == 0)
+            menu.Items.Add(new ToolStripMenuItem("No physical outputs") { Enabled = false });
+        else
+            foreach (var d in physical)
+                menu.Items.Add(MakeTargetItem(d.Id, d.Display));
+
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem(_engine.Paused ? "Resume sync" : "Pause sync", null,
             (s, e) => _engine.SetPaused(!_engine.Paused)));

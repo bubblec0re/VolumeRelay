@@ -45,7 +45,7 @@ The app lives entirely in the tray. **Right-click** the icon for:
 | Item | Meaning |
 |---|---|
 | **Auto** | Follow whatever device SteelSeries GG is currently routing all render channels to |
-| **device names** | Pin one specific output device |
+| **device names** | Pin one specific output device. Only **physical** outputs are listed — virtual endpoints are never valid targets (a virtual device must not route into another one) |
 | **Pause sync / Resume sync** | Go fully passive — the pipe behaves natively, nothing is pinned or redirected |
 | **Start with Windows** | Toggle auto-start; the checkmark reflects the actual `HKCU\...\Run` entry |
 | **Exit** | Quit |

@@ -106,8 +106,9 @@ public class VolSyncEngine : IDisposable
         // Resolve target (non-auto immediately; auto on first poll)
         lock (_lock)
         {
-            // A saved target may no longer exist (driver uninstalled, different port).
-            if (_targetId != "auto" && !_devices.Any(d => d.Id == _targetId))
+            // A saved target may no longer exist (driver uninstalled, different
+            // port) or may have been a virtual device, which is never valid.
+            if (_targetId != "auto" && !_devices.Any(d => d.Id == _targetId && !d.IsVirtual))
             {
                 _targetId = "auto";
                 _settings.Target = "auto";
