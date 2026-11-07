@@ -4,7 +4,7 @@ A small Windows tray app that makes the **keyboard volume knob** and the **Windo
 
 - **Platform:** Windows 10/11 (x64)
 - **Stack:** C# / .NET 8 (WinForms) + NAudio.Wasapi 2.2.1
-- **Footprint:** single tray icon, ~0% CPU at idle, no drivers, no services
+- **Footprint:** single tray icon, no drivers, no services (≈1% of one core at idle, from the 3 s GG poll)
 
 ---
 
@@ -133,4 +133,4 @@ Run `dist\VolSync.exe` directly (not via `dotnet VolSync.exe`).
 - [ ] Changing the Windows default device → the app re-anchors and pins the new pipe
 - [ ] Killing SteelSeries GG → Auto degrades gracefully, manual selection still works
 - [ ] **Settings → Start with Windows** survives a reboot; unchecking removes `HKCU\...\Run\VolSync`
-- [ ] Idle CPU stays at ~0%
+- [ ] Idle CPU stays low (≈1% of one core — the 3 s GG poll)
