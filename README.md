@@ -46,7 +46,7 @@ The app lives entirely in the tray. **Right-click** the icon for:
 |---|---|
 | **Auto** | Follow whatever device SteelSeries GG is currently routing all render channels to |
 | **device names** | Pin one specific output device. Only **physical** outputs are listed — see below |
-| **Pause sync / Resume sync** | Go fully passive — the pipe behaves natively, nothing is pinned or redirected |
+| **Pause relay / Resume relay** | Go fully passive — the pipe behaves natively, nothing is pinned or redirected |
 | **Start with Windows** | Toggle auto-start; the checkmark reflects the actual `HKCU\...\Run` entry |
 | **Exit** | Quit |
 
@@ -77,9 +77,9 @@ So a real device that happens to be *named* "Sonar Pro" or "CABLE Link" is still
 
 ### Mute
 
-Runtime mute sync is always on: muting the pipe mutes the target, unmuting un-mutes it. The **native Windows sound icon** reflects the pipe, so it correctly shows the muted state.
+Mute always follows the pipe: muting the pipe mutes the target, unmuting un-mutes it. The **native Windows sound icon** reflects the pipe, so it correctly shows the muted state.
 
-Mute states are **ignored at startup** on purpose — no syncing, no comparing, no popups. Manage them manually.
+Mute states are **ignored at startup** on purpose — nothing is matched, compared, or popped up. Manage them manually.
 
 ---
 
@@ -142,7 +142,7 @@ Run `dist\VolumeRelay.exe` directly (not via `dotnet VolumeRelay.exe`).
 - [ ] Mute the pipe → the target mutes and the Windows sound icon shows muted; unmute reverses it
 - [ ] Selecting a physical device in the tray routes the knob to it; the previous device's volume is untouched
 - [ ] Switching back — each device kept its own level (no carryover)
-- [ ] **Pause sync** → knob and flyout behave natively, no pinning; **Resume** → pipe snaps back to 98%
+- [ ] **Pause relay** → knob and flyout behave natively, no pinning; **Resume relay** → pipe snaps back to 98%
 - [ ] Auto follows GG when all channels share one device
 - [ ] Split GG routing → tooltip says *"split routing — pick a device"*, nothing is written
 - [ ] Making the target device the Windows default → VolumeRelay goes passive

@@ -93,7 +93,7 @@ public class TrayApp : Form
                 menu.Items.Add(MakeTargetItem(d.Id, d.Display));
 
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem(_engine.Paused ? "Resume sync" : "Pause sync", null,
+        menu.Items.Add(new ToolStripMenuItem(_engine.Paused ? "Resume relay" : "Pause relay", null,
             (s, e) => _engine.SetPaused(!_engine.Paused)));
         menu.Items.Add(MakeAutoStartItem());
         menu.Items.Add(new ToolStripMenuItem("Exit", null, (s, e) => Close()));

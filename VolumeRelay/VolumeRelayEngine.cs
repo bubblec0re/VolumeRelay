@@ -154,7 +154,7 @@ public class VolumeRelayEngine : IDisposable
         }
         catch
         {
-            // Hotplug tracking degrades; knob/mute sync keeps working.
+            // Hotplug tracking degrades; volume and mute relaying keep working.
         }
 
         RefreshDevices();

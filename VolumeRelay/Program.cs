@@ -21,7 +21,7 @@ static class Program
         }
         catch (Exception ex)
         {
-            try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "volsync-crash.log"), ex.ToString()); } catch { }
+            try { File.WriteAllText(Path.Combine(Path.GetTempPath(), "volumerelay-crash.log"), ex.ToString()); } catch { }
             throw;
         }
     }
