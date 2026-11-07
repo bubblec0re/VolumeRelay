@@ -16,7 +16,7 @@ The audible level is `virtual × physical`. Naively mirroring the knob into both
 
 ## How VolumeRelay solves it
 
-**Redirect, not mirror.**
+**Relay, not mirror.**
 
 1. The virtual default device is treated as a **neutral pipe**, pinned just below max at **98%**.
 2. VolumeRelay listens for volume/mute notifications on that pipe.
@@ -50,7 +50,7 @@ The app lives entirely in the tray. **Right-click** the icon for:
 | **Start with Windows** | Toggle auto-start; the checkmark reflects the actual `HKCU\...\Run` entry |
 | **Exit** | Quit |
 
-Hovering the icon shows the current target and its volume, or why there is no target.
+Hovering the icon reports what the app is currently doing: the target and its volume while it is relaying, `disabled` when your knob is already driving a real device directly, `paused`, or why there is no target at all.
 
 ### Which devices are listed
 
@@ -61,8 +61,8 @@ Virtual devices are recognised from the device's **HardwareIds**, not its name. 
 | Device | HardwareIds |
 |---|---|
 | SteelSeries Sonar - Gaming (virtual) | `{1}.ROOT\MEDIA\0000` |
-| Headphones (Arctis Nova 7X) | `{1}.USB\VID_1038&PID_22A5&MI_00\…` |
-| AG273QS3R4 (NVIDIA HD Audio) | `{1}.HDAUDIO\FUNC_01&VEN_10DE&…` |
+| USB headphones | `{1}.USB\VID_xxxx&PID_xxxx&MI_00\…` |
+| Onboard / GPU audio | `{1}.HDAUDIO\FUNC_01&VEN_xxxx&…` |
 
 So a real device that happens to be *named* "Sonar Pro" or "CABLE Link" is still listed, and a virtual driver with an unfamiliar name (NVIDIA Broadcast, Elgato Wave Link, Dante, …) is still hidden. Name heuristics are only a fallback for the rare case where the property store cannot be read.
 
@@ -111,42 +111,21 @@ This project is not affiliated with or endorsed by SteelSeries.
 
 ## Building
 
-The SDK used during development was installed locally (no system-wide changes):
+Any .NET 8 SDK will do:
 
 ```powershell
-# one-time local SDK install (8.0.427) into .dotnet\
-# then:
-$env:DOTNET_ROOT = "$PWD\.dotnet"
-.\dotnet\dotnet.exe build .\VolumeRelay\VolumeRelay.csproj
+dotnet build .\VolumeRelay\VolumeRelay.csproj
 ```
 
 ### Publish a single self-contained exe
 
 ```powershell
-$env:DOTNET_ROOT = "$PWD\.dotnet"
-.\dotnet\dotnet.exe publish .\VolumeRelay\VolumeRelay.csproj -c Release -r win-x64 `
+dotnet publish .\VolumeRelay\VolumeRelay.csproj -c Release -r win-x64 `
   --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
   -o .\dist
 ```
 
 Run `dist\VolumeRelay.exe` directly (not via `dotnet VolumeRelay.exe`).
 
----
+During development the SDK was installed locally into `.dotnet\` (gitignored) to avoid a system-wide install. If you have one there, set `$env:DOTNET_ROOT = "$PWD\.dotnet"` and call `.\dotnet\dotnet.exe` instead.
 
-## Manual test checklist
-
-- [ ] Tray icon appears; hovering shows `VolumeRelay — <vol>% → Auto: <device>`
-- [ ] Knob **down** lowers the target's volume; the pipe's flyout snaps back to 98%
-- [ ] Knob **up** raises it; turning up at 100% does nothing (silent clamp)
-- [ ] Repeated detents keep working in both directions (no dead direction)
-- [ ] Mute the pipe → the target mutes and the Windows sound icon shows muted; unmute reverses it
-- [ ] Selecting a physical device in the tray routes the knob to it; the previous device's volume is untouched
-- [ ] Switching back — each device kept its own level (no carryover)
-- [ ] **Pause relay** → knob and flyout behave natively, no pinning; **Resume relay** → pipe snaps back to 98%
-- [ ] Auto follows GG when all channels share one device
-- [ ] Split GG routing → tooltip says *"split routing — pick a device"*, nothing is written
-- [ ] Making the target device the Windows default → VolumeRelay goes passive
-- [ ] Changing the Windows default device → the app re-anchors and pins the new pipe
-- [ ] Killing SteelSeries GG → Auto degrades gracefully, manual selection still works
-- [ ] **Start with Windows** survives a reboot; unchecking removes `HKCU\...\Run\VolumeRelay`
-- [ ] Idle CPU stays low (≈1% of one core — the 3 s GG poll)
