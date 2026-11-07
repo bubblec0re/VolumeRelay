@@ -23,21 +23,15 @@ public enum RelayMode
 /// </summary>
 public class VolumeRelayEngine : IDisposable
 {
-    /// <summary>
-    /// Event-context GUID the Windows shell passes when *its own* volume UI
-    /// changes the master volume. Measured on this machine (flyout slider); the
-    /// value is an undocumented implementation detail, not a documented constant.
-    ///
-    /// It is treated as a whitelist on purpose. Anything else - HID volume keys,
-    /// other apps, or a context we have not seen - is a relative step. The
-    /// failure modes are not symmetric: if the shell ever changes this GUID the
-    /// flyout quietly reverts to behaving like a jog, which is harmless, whereas
-    /// reading a knob step as absolute could jump the target straight to ~100%
-    /// (bad on IEMs). Re-measure with `Spike notify` while dragging the flyout.
-    /// </summary>
-    static readonly Guid VolumeUiContext = new("dd9d3f1d-50d0-4db7-bf63-0362902def26");
-
     const float DefaultPin = 0.98f;
+
+    /// <summary>
+    /// How far the pipe may sit from the pin and still count as a hotkey detent.
+    /// One detent is 0.02 (measured); the margin absorbs a coalesced pair. Detents
+    /// were measured to never coalesce, so any larger displacement is somebody
+    /// setting an absolute level rather than nudging.
+    /// </summary>
+    const float KnobStepTolerance = 0.05f;
     const float Epsilon = 0.001f;
     const int SuppressWindowMs = 500;
 
@@ -293,9 +287,17 @@ public class VolumeRelayEngine : IDisposable
             if (volumeChanged)
             {
                 // A slider position is an absolute level; a knob detent is a
-                // relative step. Only the known volume-UI context counts as a
-                // slider - see VolumeUiContext for why this is a whitelist.
-                bool fromSlider = data.EventContext == VolumeUiContext;
+                // relative step. Detected by size, not by the caller's event-context
+                // GUID: those GUIDs are per-caller and undocumented (the flyout and
+                // the Settings app use different ones), so a whitelist would need
+                // every UI surface enumerated forever. A detent can only ever land
+                // one step from the pin, which no UI drag ever does.
+                //
+                // The context check is the safety net: a hotkey change carries no
+                // context, so even a coalesced multi-detent event stays relative.
+                // Reading one as absolute could jump the target to full volume.
+                bool knobSized = Math.Abs(newVol - _pinValue) <= KnobStepTolerance;
+                bool fromSlider = data.EventContext != Guid.Empty && !knobSized;
                 float delta = newVol - _lastPipeVolume;
                 _lastPipeVolume = newVol;
 

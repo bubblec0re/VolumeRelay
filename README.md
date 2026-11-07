@@ -27,9 +27,14 @@ So the physical device holds the real 0–100% range, the pipe stays audibly tra
 
 ### Telling the slider from the knob
 
-Both arrive as the same WASAPI notification, carrying only the new volume — but not quite: the shell's flyout passes an **event-context GUID**, while the HID volume keys pass **none**. VolumeRelay recognises that one GUID as "the volume UI" and treats everything else — the knob, other apps, any context it doesn't know — as a relative step.
+Both arrive as the same WASAPI notification, carrying only the new volume — so the two are separated by *shape*, not by who sent them:
 
-That asymmetry is deliberate. The GUID is an undocumented implementation detail of the shell, so it can change; when it does, the flyout simply degrades to behaving like a jog, which is harmless. The reverse mistake would not be: reading a knob step as absolute could jump the target straight to full volume, which is why the knob path must never be able to reach the absolute branch.
+- a **knob detent** can only move the pipe to one step either side of the pin (0.02, and detents were measured never to coalesce), so it lands with **no event context**;
+- anything setting an **absolute level** lands anywhere, and carries an event context.
+
+So a change within one step of the pin, with no context, is a relative step; everything else is an absolute set. Identifying it by shape rather than by the caller's GUID matters because those GUIDs are **per-caller and undocumented** — the taskbar flyout and the Settings app each use a different one — so a whitelist would have to enumerate every volume UI forever.
+
+The context check stays as a safety net: a hotkey change never carries one, so even a coalesced multi-detent event remains relative. Reading a knob step as absolute could jump the target straight to full volume.
 
 ### Why 98% and not 100%
 
