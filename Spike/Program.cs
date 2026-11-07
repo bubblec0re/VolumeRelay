@@ -49,6 +49,24 @@ if (mode == "probe")
     }
     catch (Exception ex) { Console.WriteLine($"NAudio FriendlyName FAILED: {ex.Message}"); }
 
+    // Dump AudioEndpointVolume members
+    {
+        var t2 = asm.GetType("NAudio.CoreAudioApi.AudioEndpointVolume");
+        if (t2 != null) foreach (var m in t2.GetEvents()) Console.WriteLine($"AUV EVENT: {m.Name}");
+    }
+
+    // Dump AudioEndpointVolumeNotificationDelegate signature
+    {
+        var t4 = asm.GetType("NAudio.CoreAudioApi.AudioEndpointVolumeNotificationDelegate");
+        if (t4 != null) { var m = t4.GetMethod("Invoke"); Console.WriteLine($"DELEGATE: {m}"); foreach (var p in m.GetParameters()) Console.WriteLine($"  PARAM: {p.ParameterType.Name} {p.Name}"); }
+    }
+
+    // Dump AudioVolumeNotificationData props
+    {
+        var t3 = asm.GetType("NAudio.CoreAudioApi.AudioVolumeNotificationData");
+        if (t3 != null) foreach (var p in t3.GetProperties()) Console.WriteLine($"AVND PROP: {p.Name} {p.PropertyType.Name}");
+    }
+
     // Dump IMMNotificationClient + MMDeviceEnumerator members
     foreach (var name in new[] { "NAudio.CoreAudioApi.Interfaces.IMMNotificationClient", "NAudio.CoreAudioApi.MMDeviceEnumerator" })
     {
@@ -159,6 +177,60 @@ if (mode == "table")
     }
 }
 
+if (mode == "ggport")
+{
+    var pids = System.Diagnostics.Process.GetProcessesByName("SteelSeriesSonar").Select(p => { var i = p.Id; p.Dispose(); return i; }).ToList();
+    Console.WriteLine("Sonar PIDs: " + string.Join(",", pids));
+    int size = 0;
+    var rc1 = GgTcp.Ping(IntPtr.Zero, ref size);
+    Console.WriteLine("rc1=" + rc1 + " size=" + size);
+    if (rc1 == 122)
+    {
+        var ptr = Marshal.AllocHGlobal(size);
+        try
+        {
+            var rc2 = GgTcp.Get(ptr, ref size);
+            Console.WriteLine("rc2=" + rc2);
+            if (rc2 == 0)
+            {
+                int rows = Marshal.ReadInt32(ptr);
+                Console.WriteLine("rows=" + rows + " size=" + size);
+                var bytes = new byte[size - 4];
+                Marshal.Copy(IntPtr.Add(ptr, 4), bytes, 0, bytes.Length);
+                Console.WriteLine("hex: " + Convert.ToHexString(bytes));
+var rowPtr = IntPtr.Add(ptr, 4);
+                for (int i = 0; i < rows; i++)
+                {
+                    var row = Marshal.PtrToStructure<GgTcp.TcpRow>(rowPtr);
+                    if (row.state == 2 && pids.Contains((int)row.owningPid))
+                        Console.WriteLine("LISTEN: port=" + ((row.localPort & 0xFF00) >> 8 | (row.localPort & 0x00FF)) + " pid=" + row.owningPid);
+                    rowPtr = IntPtr.Add(rowPtr, Marshal.SizeOf<GgTcp.TcpRow>());
+                }
+            }
+        }
+        finally { Marshal.FreeHGlobal(ptr); }
+    }
+    return;
+}
+
+if (mode == "setdev")
+{
+    // Spike: set master volume (+ optional mute) on a specific endpoint by ID, then read back.
+    // Usage: setdev <endpointId> <volume 0..1> [true|false]
+    var id = args.Length > 1 ? args[1] : throw new Exception("usage: setdev <id> <vol> [mute]");
+    float vol = args.Length > 2 ? float.Parse(args[2], System.Globalization.CultureInfo.InvariantCulture) : 1f;
+    bool? mute = args.Length > 3 ? bool.Parse(args[3]) : null;
+
+    var enum2 = new MMDeviceEnumerator();
+    var dev = enum2.GetDevice(id);
+    var v = dev.AudioEndpointVolume;
+    v.MasterVolumeLevelScalar = vol;
+    if (mute.HasValue) v.Mute = mute.Value;
+    Console.WriteLine($"Set {dev.FriendlyName}: volume={v.MasterVolumeLevelScalar:F2} mute={v.Mute}");
+    return;
+}
+
+if (mode == "watchdefault")
 if (mode == "watchdefault")
 {
     // Spike: register an IMMNotificationClient; watch for default-device changes + add/remove.
@@ -434,4 +506,17 @@ class VolumeCallback : IAudioEndpointVolumeCallback
         Console.WriteLine($"[notify] volume={d.fMasterVolume:F2}  mute={d.bMuted != 0}  channels={d.nChannels}  ctx={d.guidEventContext}");
         return 0;
     }
+}
+
+
+class GgTcp
+{
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct TcpRow { public uint state; public uint localAddr; public uint localPort; public uint remoteAddr; public uint remotePort; public uint owningPid; }
+
+    [System.Runtime.InteropServices.DllImport("iphlpapi.dll")]
+    static extern uint GetExtendedTcpTable(IntPtr t, ref int size, bool ordering, int ver, int reserved, uint tblClass);
+
+    public static uint Ping(IntPtr t, ref int size) => GetExtendedTcpTable(t, ref size, false, 2, 5, 0);
+    public static uint Get(IntPtr t, ref int size) => GetExtendedTcpTable(t, ref size, false, 2, 5, 0);
 }
