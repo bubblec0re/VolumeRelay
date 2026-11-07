@@ -12,11 +12,11 @@ A small Windows tray app that makes the **keyboard volume knob** and the **Windo
 
 SteelSeries Sonar/GG sets **"SteelSeries Sonar - Gaming"** (a virtual audio device) as the Windows default output. The volume knob and the Windows flyout only change *that* device's volume. Your physical output — headphones, monitor, speakers — keeps its own separate volume, so the knob does nothing audible.
 
-The audible level is `virtual × physical`. Naively mirroring the knob into both would apply the value **twice** (80% × 80% = 64%).
+The audible level is `virtual × physical`, so putting the knob's value on both devices would attenuate twice (80% × 80% = 64%).
 
 ## How VolumeRelay solves it
 
-**Relay, not mirror.**
+VolumeRelay keeps the virtual default at a fixed pass-through level and moves the real level onto one physical device:
 
 1. The virtual default device is treated as a **neutral pipe**, pinned just below max at **98%**.
 2. VolumeRelay listens for volume/mute notifications on that pipe.
@@ -27,7 +27,7 @@ So the physical device holds the real 0–100% range, the pipe stays audibly tra
 
 ### Why 98% and not 100%
 
-The knob is a **relative** control: ~2% per detent, and **turning up while already at 100% emits no event at all** (verified). Pinning the pipe at exactly 100% would kill the "up" direction. Pinning at 98% leaves one step of headroom, so both directions always produce a full-step event:
+The knob is a **relative** control: ~2% per detent, and **turning up while already at 100% emits no event at all**. Pinning the pipe at exactly 100% would kill the "up" direction. Pinning at 98% leaves one step of headroom, so both directions always produce a full-step event:
 
 | You turn | Pipe goes | Delta applied | Pipe then snaps to |
 |---|---|---|---|
@@ -64,13 +64,13 @@ Virtual devices are recognised from the device's **HardwareIds**, not its name. 
 | USB headphones | `{1}.USB\VID_xxxx&PID_xxxx&MI_00\…` |
 | Onboard / GPU audio | `{1}.HDAUDIO\FUNC_01&VEN_xxxx&…` |
 
-So a real device that happens to be *named* "Sonar Pro" or "CABLE Link" is still listed, and a virtual driver with an unfamiliar name (NVIDIA Broadcast, Elgato Wave Link, Dante, …) is still hidden. Name heuristics are only a fallback for the rare case where the property store cannot be read.
+Because this is a property of the device rather than its name, an unfamiliar virtual driver is still hidden and a real device with an odd name is still listed. Name matching is only a fallback for the rare case where the property store cannot be read.
 
 ### Target selection rules
 
-- Exactly **one** target is controlled at a time. Picking a device *is* the opt-out; there are no per-device checkboxes.
+- Exactly **one** target is controlled at a time; picking a different device switches the target.
 - **Auto** is strict: it only picks a device when *all* configured render channels (`game`, `media`, `chat`, `aux`) route to a **single** device. If routing is split across devices, Auto reports *"split routing — pick a device"* and writes to nothing — one knob must not drive two devices.
-- **No volume carryover** — switching targets never copies one device's level onto another. Devices legitimately sit at different levels (a headset at 100%, a monitor at 40%, IEMs at 10%). Copying would be wrong and potentially dangerously loud.
+- **Switching targets never copies volume.** Each device keeps its own level — a headset at 100%, a monitor at 40%, IEMs at 10% — because those differences are intentional, and copying one onto another can be dangerously loud.
 - If the Windows default device *is* the selected target, VolumeRelay goes **passive** and the knob controls it natively.
 - VolumeRelay only acts when the Windows default is a **virtual** device. If the default is physical, the knob already controls something real: redirecting would attenuate twice and pinning it to 98% would overwrite a level you chose on purpose. This is also what keeps a slow-GG boot safe — it waits for Sonar to become the default rather than pinning whatever was there first.
 - **No config file.** VolumeRelay writes nothing to disk and keeps no state of its own. It always starts on **Auto** — following GG is the entire point — and a manual pick lasts until you exit. The only thing it ever persists is the optional `HKCU\...\Run` entry behind *Start with Windows*, and that lives in the registry, not a file.
@@ -79,15 +79,15 @@ So a real device that happens to be *named* "Sonar Pro" or "CABLE Link" is still
 
 Mute always follows the pipe: muting the pipe mutes the target, unmuting un-mutes it. The **native Windows sound icon** reflects the pipe, so it correctly shows the muted state.
 
-Mute states are **ignored at startup** on purpose — nothing is matched, compared, or popped up. Manage them manually.
+Mute states are **ignored at startup** on purpose: VolumeRelay reads neither device's mute state and takes no action until you change one.
 
 ---
 
 ## Known limitations
 
-- **The virtual device's flyout is a relative jog, not an absolute slider.** Dragging it shifts the target by the delta, then it snaps back to 98%. Mirroring the target's absolute volume into the pipe would reintroduce double attenuation, so this is a deliberate tradeoff. Low impact — Sonar's virtual device volume is rarely touched by hand. **The honest absolute controls are the target device's own flyout/volume mixer and the keyboard knob** — VolumeRelay never touches the target's own UI.
-- **Startup is gentle:** the pipe is set to 98%, but the target's existing volume and both mute states are left alone until your first knob turn.
-- **No subscription to the target.** If something else changes the target's volume, the tray tooltip can go stale until the next change.
+- **The virtual device's flyout is a relative jog, not an absolute slider.** Dragging it shifts the target by the delta, then it snaps back to 98%. The pipe has to stay near max to keep its headroom, so its slider cannot show the target's actual level. Low impact — Sonar's virtual device volume is rarely touched by hand. **The honest absolute controls are the target device's own flyout/volume mixer and the keyboard knob** — VolumeRelay never touches the target's own UI.
+- **Startup leaves your levels alone:** the pipe is set to 98%, but the target's current volume and both mute states are untouched until your first knob turn.
+- **The target is not monitored.** If something else changes the target's volume, the tooltip can lag until your next interaction.
 - **GG integration is best-effort.** It depends on an *undocumented* SteelSeries local API (see below). If GG updates and changes it, Auto degrades: it holds the last known target, or falls back to the single physical non-default device, and says so in the tooltip. Manual device selection always works without GG.
 
 ---
@@ -103,7 +103,7 @@ Audio access uses [NAudio](https://github.com/naudio/NAudio) (`NAudio.Wasapi` 2.
 
 ### Disclaimer
 
-The SteelSeries GG/Sonar local HTTP API is **undocumented**. VolumeRelay discovers it via `C:\ProgramData\SteelSeries\GG\coreProps.json` → `https://<ggEncryptedAddress>/subApps` → the Sonar sub-app's `webServerAddress` → `/classicRedirections`. The port is randomized per GG launch, the TLS certificate is self-signed and regenerated per run, and endpoints or JSON shapes may change in **any** GG update. VolumeRelay treats all of it as a disposable layer: every stage is wrapped, and manual target selection remains the foundation.
+The SteelSeries GG/Sonar local HTTP API is **undocumented**. VolumeRelay discovers it via `C:\ProgramData\SteelSeries\GG\coreProps.json` → `https://<ggEncryptedAddress>/subApps` → the Sonar sub-app's `webServerAddress` → `/classicRedirections`. The port is randomized per GG launch, the TLS certificate is self-signed and regenerated per run, and endpoints or JSON shapes may change in **any** GG update. VolumeRelay treats all of it as best-effort: every stage is wrapped, so a broken API costs you Auto, not the app.
 
 This project is not affiliated with or endorsed by SteelSeries.
 
