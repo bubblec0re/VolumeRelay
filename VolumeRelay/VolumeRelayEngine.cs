@@ -108,6 +108,19 @@ public class VolumeRelayEngine : IDisposable
         }
     }
 
+    /// <summary>Name of the current Windows default (render) device, if known.</summary>
+    public string? DefaultDeviceName
+    {
+        get
+        {
+            lock (_lock)
+            {
+                if (_pipeId == null) return null;
+                return _devices.FirstOrDefault(d => d.Id == _pipeId)?.Name;
+            }
+        }
+    }
+
     /// <summary>Reason there's no auto target, or null if a target is resolved.</summary>
     public string? AutoStatus
     {

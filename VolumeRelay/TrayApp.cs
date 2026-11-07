@@ -133,16 +133,17 @@ public class TrayApp : Form
                 _notify.Text = "VolumeRelay — paused";
                 return;
 
-            // The app is not touching anything in these states; saying otherwise
-            // would read as active redirection.
+            // Either way the app is doing nothing: the knob is driving a real
+            // device directly, so report the relay as disabled.
             case RelayMode.DefaultIsTarget:
-                _notify.Text = Clip("VolumeRelay — passive, knob controls " +
-                                    (_engine.TargetName ?? "the default device"));
-                return;
-
             case RelayMode.DefaultNotVirtual:
-                _notify.Text = "VolumeRelay — idle, default is a physical device";
+            {
+                var dev = _engine.DefaultDeviceName;
+                _notify.Text = Clip(dev == null
+                    ? "VolumeRelay — disabled: real device selected"
+                    : "VolumeRelay — disabled: real device " + dev + " selected");
                 return;
+            }
 
             case RelayMode.NoTarget:
                 _notify.Text = Clip("VolumeRelay — " + (_engine.AutoStatus ?? "no target"));
@@ -151,12 +152,11 @@ public class TrayApp : Form
 
         var vol = _engine.TargetVolume * 100;
         var name = _engine.TargetName ?? "target";
-        var prefix = _engine.TargetId == "auto" ? "Auto: " : "";
-        _notify.Text = Clip($"VolumeRelay — {vol:0}% → {prefix}{name}");
+        _notify.Text = Clip($"VolumeRelay — {vol:0}%: {name}");
     }
 
-    /// <summary>NotifyIcon.Text throws above 63 chars — keep it short.</summary>
-    static string Clip(string s) => s.Length <= 63 ? s : s[..60] + "…";
+    /// <summary>NotifyIcon.Text throws above 127 chars (63 before .NET 6).</summary>
+    static string Clip(string s) => s.Length <= 127 ? s : s[..124] + "…";
 
     static Icon CreateIcon()
     {
