@@ -47,7 +47,7 @@ The app lives entirely in the tray. **Right-click** the icon for:
 | **Auto** | Follow whatever device SteelSeries GG is currently routing all render channels to |
 | **device names** | Pin one specific output device |
 | **Pause sync / Resume sync** | Go fully passive — the pipe behaves natively, nothing is pinned or redirected |
-| **Settings…** | Start with Windows |
+| **Start with Windows** | Toggle auto-start; the checkmark reflects the actual `HKCU\...\Run` entry |
 | **Exit** | Quit |
 
 Hovering the icon shows the current target and its volume, or why there is no target.
@@ -132,5 +132,5 @@ Run `dist\VolSync.exe` directly (not via `dotnet VolSync.exe`).
 - [ ] Making the target device the Windows default → VolSync goes passive
 - [ ] Changing the Windows default device → the app re-anchors and pins the new pipe
 - [ ] Killing SteelSeries GG → Auto degrades gracefully, manual selection still works
-- [ ] **Settings → Start with Windows** survives a reboot; unchecking removes `HKCU\...\Run\VolSync`
+- [ ] **Start with Windows** survives a reboot; unchecking removes `HKCU\...\Run\VolSync`
 - [ ] Idle CPU stays low (≈1% of one core — the 3 s GG poll)

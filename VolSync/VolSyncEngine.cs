@@ -140,20 +140,6 @@ public class VolSyncEngine : IDisposable
 
         StateChanged?.Invoke();
     }
-
-    /// <summary>Called after the settings form saves.</summary>
-    public void ReloadSettings(Settings s)
-    {
-        lock (_lock)
-        {
-            _settings = s;
-            _targetId = s.Target;
-            if (_targetId != "auto")
-                ResolveTargetLocked();
-        }
-        StateChanged?.Invoke();
-    }
-
     // ---- Pipe (default device) ----
 
     void AnchorPipe()

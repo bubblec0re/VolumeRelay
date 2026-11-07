@@ -34,7 +34,6 @@ public class TrayApp : Form
             Text = "VolSync",
             Visible = true,
         };
-        _notify.DoubleClick += (s, e) => OpenSettings();
 
         _engine.StateChanged += OnStateChanged;
         _engine.VolumeChanged += OnVolumeChanged;
@@ -82,10 +81,28 @@ public class TrayApp : Form
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem(_engine.Paused ? "Resume sync" : "Pause sync", null,
             (s, e) => _engine.SetPaused(!_engine.Paused)));
-        menu.Items.Add(new ToolStripMenuItem("Settings…", null, (s, e) => OpenSettings()));
+        menu.Items.Add(MakeAutoStartItem());
         menu.Items.Add(new ToolStripMenuItem("Exit", null, (s, e) => Close()));
         _notify.ContextMenuStrip = menu;
         UpdateTooltip();
+    }
+
+    ToolStripMenuItem MakeAutoStartItem()
+    {
+        var item = new ToolStripMenuItem("Start with Windows")
+        {
+            // The Run key is the source of truth, not the saved JSON flag.
+            Checked = AutoStart.IsEnabled(),
+        };
+        item.Click += (s, e) =>
+        {
+            var enable = !AutoStart.IsEnabled();
+            AutoStart.SetEnabled(enable);
+            _settings.AutoStart = enable;
+            SettingsStore.Save(_settings);
+            item.Checked = enable;
+        };
+        return item;
     }
 
     ToolStripMenuItem MakeTargetItem(string id, string text)
@@ -119,14 +136,6 @@ public class TrayApp : Form
 
     /// <summary>NotifyIcon.Text throws above 63 chars — keep it short.</summary>
     static string Clip(string s) => s.Length <= 63 ? s : s[..60] + "…";
-
-    void OpenSettings()
-    {
-        using var form = new SettingsForm(_settings);
-        form.ShowDialog(this);
-        _engine.ReloadSettings(_settings);
-        RebuildUi();
-    }
 
     static Icon CreateIcon()
     {
