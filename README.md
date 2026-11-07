@@ -27,7 +27,9 @@ So the physical device holds the real 0–100% range, the pipe stays audibly tra
 
 ### Telling the slider from the knob
 
-Both arrive as the same WASAPI notification, carrying only the new volume — but not quite: the shell's flyout passes an **event context GUID**, while the HID volume keys pass **none**. So `EventContext != Guid.Empty` means "this came from the volume UI" and empty means "a hotkey or knob step". That distinction is free — no input hooks, no heuristics, nothing to misread.
+Both arrive as the same WASAPI notification, carrying only the new volume — but not quite: the shell's flyout passes an **event-context GUID**, while the HID volume keys pass **none**. VolumeRelay recognises that one GUID as "the volume UI" and treats everything else — the knob, other apps, any context it doesn't know — as a relative step.
+
+That asymmetry is deliberate. The GUID is an undocumented implementation detail of the shell, so it can change; when it does, the flyout simply degrades to behaving like a jog, which is harmless. The reverse mistake would not be: reading a knob step as absolute could jump the target straight to full volume, which is why the knob path must never be able to reach the absolute branch.
 
 ### Why 98% and not 100%
 

@@ -23,6 +23,20 @@ public enum RelayMode
 /// </summary>
 public class VolumeRelayEngine : IDisposable
 {
+    /// <summary>
+    /// Event-context GUID the Windows shell passes when *its own* volume UI
+    /// changes the master volume. Measured on this machine (flyout slider); the
+    /// value is an undocumented implementation detail, not a documented constant.
+    ///
+    /// It is treated as a whitelist on purpose. Anything else - HID volume keys,
+    /// other apps, or a context we have not seen - is a relative step. The
+    /// failure modes are not symmetric: if the shell ever changes this GUID the
+    /// flyout quietly reverts to behaving like a jog, which is harmless, whereas
+    /// reading a knob step as absolute could jump the target straight to ~100%
+    /// (bad on IEMs). Re-measure with `Spike notify` while dragging the flyout.
+    /// </summary>
+    static readonly Guid VolumeUiContext = new("dd9d3f1d-50d0-4db7-bf63-0362902def26");
+
     const float DefaultPin = 0.98f;
     const float Epsilon = 0.001f;
     const int SuppressWindowMs = 500;
@@ -278,11 +292,10 @@ public class VolumeRelayEngine : IDisposable
 
             if (volumeChanged)
             {
-                // The shell's volume flyout passes an event context; the HID
-                // volume keys (the knob) pass none. That distinguishes the two
-                // sources for free: a slider position is an absolute level, a
-                // knob detent is a relative step.
-                bool fromSlider = data.EventContext != Guid.Empty;
+                // A slider position is an absolute level; a knob detent is a
+                // relative step. Only the known volume-UI context counts as a
+                // slider - see VolumeUiContext for why this is a whitelist.
+                bool fromSlider = data.EventContext == VolumeUiContext;
                 float delta = newVol - _lastPipeVolume;
                 _lastPipeVolume = newVol;
 
