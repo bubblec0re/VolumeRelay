@@ -3,27 +3,27 @@
 A small Windows tray app that makes the **physical volume knob on your keyboard** and the **Windows volume UI** control the physical output device you are actually listening through — even when SteelSeries Sonar/GG has pinned a virtual device as the Windows default.
 
 - **Platform:** Windows 10/11 (x64)
-- **Runtime:** none needed for the published self-contained exe; building from source requires the .NET 8 SDK
+- **Runtime:** building from source requires the .NET 8 SDK
 - **Footprint:** single tray icon, no drivers, no services, no installer
 
 ---
 
 ## What it does
 
-When SteelSeries Sonar is active, it sets a virtual device ("SteelSeries Sonar - Gaming") as the Windows default output. The volume knob and the Windows flyout then only change *that* device's volume, while your headphones, monitor, or speakers keep their own separate level — so the knob appears to do nothing audible.
+When SteelSeries Sonar is active, it sets a virtual device ("SteelSeries Sonar - Gaming") as the Windows default output. Physical volume wheels and hotkeys, as well as the Windows volume control then only change *that* virtual device's volume, while your headphones or speakers keep their own separate level — so the knob only changes the volume of whatever apps were routed by Sonar into that virtual device.
 
 VolumeRelay fixes this by:
 
 - keeping the virtual default at a fixed pass-through level (**98%**) and
 - applying every volume or mute change to **one physical output device** of your choice.
 
-The result: the knob and the flyout control the device you actually hear, the virtual device stays effectively transparent, and nothing is attenuated twice.
+The result: the knob and the Windows UI control the device you actually hear, and the virtual device stays effectively transparent.
 
 ---
 
 ## Controls it responds to
 
-In this README, **volume knob** means the physical rotary knob, roller, or wheel built into a keyboard — the volume roller on a SteelSeries Apex, the dial on a Logitech MX Keys, a dedicated Volume Up/Down key, or anything else that emits the standard Windows volume keys. VolumeRelay treats those as **relative steps** (about 2% per detent or key press). Standard keyboard **media keys** (Volume Up / Volume Down / Mute) take the same path and behave identically.
+A physical rotary knob, roller, or wheel built into a keyboard, dedicated Volume Up/Down keys, or anything else that emits the standard Windows volume keys. VolumeRelay treats those as **relative steps** (about 2% per detent or key press). Standard keyboard **media keys** (Volume Up / Volume Down / Mute) take the same path and behave identically.
 
 | Control | Applied as |
 |---|---|
@@ -83,7 +83,7 @@ Hovering the tray icon reports the current state:
 
 ### Mute
 
-Mute always follows the virtual device: muting it mutes the target, unmuting un-mutes it. The native Windows sound icon therefore reflects the correct state. Mute states are not read or applied at startup.
+Mute always follows the virtual device: muting it mutes the target, unmuting un-mutes it. The native Windows sound icon reflects the mute state.
 
 ---
 
@@ -129,7 +129,7 @@ Run `dist\VolumeRelay.exe` directly (not via `dotnet VolumeRelay.exe`).
 
 ---
 
-## Dependencies and credits
+## Credits
 
 SteelSeries GG/Sonar integration was built from community reverse-engineering knowledge (no code copied):
 
