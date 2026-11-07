@@ -14,6 +14,8 @@ public class VolSyncEngine : IDisposable
     const int SuppressWindowMs = 500;
 
     readonly GgClient _gg = new();
+    MMDeviceEnumerator? _enumerator;
+    DeviceWatcher? _watcher;
     readonly object _lock = new();
     readonly AudioEndpointVolumeNotificationDelegate _pipeHandler;
     Settings _settings;
@@ -89,16 +91,24 @@ public class VolSyncEngine : IDisposable
 
     public void Start()
     {
-        var watcher = new DeviceWatcher(
-            onAdded: _ => RefreshDevices(),
-            onRemoved: _ => RefreshDevices(),
-            onStateChanged: _ => RefreshDevices(),
+        // Both must outlive Start(): the registration is only as durable as the
+        // managed callback object and the enumerator's RCW. As locals they were
+        // collectable after the first GC, which would silently kill hotplug and
+        // default-change events.
+        _enumerator = new MMDeviceEnumerator();
+        _watcher = new DeviceWatcher(
+            onAdded: _ => QueueRefresh(),
+            onRemoved: _ => QueueRefresh(),
+            onStateChanged: _ => QueueRefresh(),
             onDefaultChanged: OnDefaultDeviceChanged);
         try
         {
-            new MMDeviceEnumerator().RegisterEndpointNotificationCallback(watcher);
+            _enumerator.RegisterEndpointNotificationCallback(_watcher);
         }
-        catch { }
+        catch
+        {
+            // Hotplug tracking degrades; knob/mute sync keeps working.
+        }
 
         RefreshDevices();
         AnchorPipe();
@@ -142,6 +152,32 @@ public class VolSyncEngine : IDisposable
         StateChanged?.Invoke();
     }
     // ---- Pipe (default device) ----
+
+    int _refreshQueued;
+
+    /// <summary>
+    /// Device notifications arrive on a Core Audio callback thread. Re-entering
+    /// Core Audio from there can block indefinitely (creating enumerators,
+    /// disposing devices, activating endpoints), so callbacks only mark work
+    /// dirty and return; the refresh runs on a pool thread and coalesces bursts.
+    /// </summary>
+    void QueueRefresh()
+    {
+        if (Interlocked.Exchange(ref _refreshQueued, 1) == 1) return;
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            try
+            {
+                Thread.Sleep(150); // let a plug/unplug burst settle
+                Interlocked.Exchange(ref _refreshQueued, 0);
+                RefreshDevices();
+            }
+            catch
+            {
+                // a failed refresh must not take down the pool thread
+            }
+        });
+    }
 
     void AnchorPipe()
     {
@@ -248,7 +284,7 @@ public class VolSyncEngine : IDisposable
     void OnDefaultDeviceChanged(string flow, string role, string newId)
     {
         if (flow != "Render" || role != "Console") return;
-        RefreshDevices();
+        QueueRefresh();
     }
 
     // ---- Target management ----
@@ -316,7 +352,7 @@ public class VolSyncEngine : IDisposable
     void ResolveTargetDeviceLocked()
     {
         var id = ResolvedTargetId;
-        _targetDevice?.Dispose();
+        try { _targetDevice?.Dispose(); } catch { }
         _targetDevice = null;
         _targetVolume = null;
         if (id == null) return;
@@ -325,7 +361,10 @@ public class VolSyncEngine : IDisposable
             _targetDevice = new MMDeviceEnumerator().GetDevice(id);
             _targetVolume = _targetDevice.AudioEndpointVolume;
         }
-        catch { }
+        catch
+        {
+            // device may be gone; TargetVolume then reads 0 / no-op writes
+        }
     }
 
     /// <summary>True when the default device IS the target → no pinning/redirect.</summary>
@@ -376,7 +415,9 @@ public class VolSyncEngine : IDisposable
             // Re-resolve target device (it may have come back)
             ResolveTargetDeviceLocked();
         }
-        StateChanged?.Invoke();
+
+        // A UI subscriber must never break device tracking.
+        try { StateChanged?.Invoke(); } catch { }
     }
 
     // ---- Pause ----
@@ -390,6 +431,12 @@ public class VolSyncEngine : IDisposable
     public void Dispose()
     {
         _ggTimer?.Dispose();
+
+        if (_watcher != null && _enumerator != null)
+        {
+            try { _enumerator.UnregisterEndpointNotificationCallback(_watcher); } catch { }
+        }
+
         lock (_lock)
         {
             UnanchorPipeLocked();

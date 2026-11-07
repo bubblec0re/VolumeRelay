@@ -21,6 +21,11 @@ public class TrayApp : Form
         Opacity = 0;
         ShowIcon = false;
 
+        // A form that is never shown has no window handle, so BeginInvoke would
+        // be unavailable and COM callbacks would touch the tray UI from their
+        // own thread. Create it on the UI thread before anything can fire.
+        CreateHandle();
+
         _settings = SettingsStore.Load();
 
         // Refresh the Run entry so a moved or updated exe keeps a valid path.
@@ -62,7 +67,10 @@ public class TrayApp : Form
         base.OnFormClosed(e);
     }
 
-    void OnStateChanged() => InvokeIfNeeded(RebuildUi);
+    void OnStateChanged()
+    {
+        InvokeIfNeeded(RebuildUi);
+    }
     void OnVolumeChanged() => InvokeIfNeeded(UpdateTooltip);
 
     void InvokeIfNeeded(Action a)
@@ -92,6 +100,7 @@ public class TrayApp : Form
             (s, e) => _engine.SetPaused(!_engine.Paused)));
         menu.Items.Add(MakeAutoStartItem());
         menu.Items.Add(new ToolStripMenuItem("Exit", null, (s, e) => Close()));
+
         _notify.ContextMenuStrip = menu;
         UpdateTooltip();
     }
