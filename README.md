@@ -1,6 +1,6 @@
 # VolumeRelay
 
-A small Windows tray app that makes the **keyboard volume knob** and the **Windows volume UI** control the physical output device you are actually listening through — even when SteelSeries Sonar/GG has pinned a virtual device as the Windows default.
+A small Windows tray app that makes the **physical volume knob on your keyboard** and the **Windows volume UI** control the physical output device you are actually listening through — even when SteelSeries Sonar/GG has pinned a virtual device as the Windows default.
 
 - **Platform:** Windows 10/11 (x64)
 - **Runtime:** none needed for the published self-contained exe; building from source requires the .NET 8 SDK
@@ -19,7 +19,19 @@ VolumeRelay fixes this by:
 
 The result: the knob and the flyout control the device you actually hear, the virtual device stays effectively transparent, and nothing is attenuated twice.
 
-**Knob vs. slider:** a knob detent is treated as a relative step (about 2% per click), while a slider in a volume UI is treated as an absolute level. Dragging the flyout slider to 40% sets the target to 40%; tapping the knob up once raises it by one step.
+---
+
+## Controls it responds to
+
+In this README, **volume knob** means the physical rotary knob, roller, or wheel built into a keyboard — the volume roller on a SteelSeries Apex, the dial on a Logitech MX Keys, a dedicated Volume Up/Down key, or anything else that emits the standard Windows volume keys. VolumeRelay treats those as **relative steps** (about 2% per detent or key press). Standard keyboard **media keys** (Volume Up / Volume Down / Mute) take the same path and behave identically.
+
+| Control | Applied as |
+|---|---|
+| Keyboard knob / roller / wheel, media Volume Up/Down keys | relative step (~2%) |
+| Windows volume flyout, Settings > Sound, the device slider in Volume Mixer | absolute level |
+| Any mute key or mute toggle | mirrored to the target |
+
+Dragging the flyout slider to 40% sets the target to 40%; nudging the knob up once raises it by one step. VolumeRelay watches only the Windows **default output device**, so any control that changes that device's volume is picked up. Per-app sliders in the volume mixer are not — they change a single app's level, not the device's.
 
 ---
 
@@ -80,6 +92,7 @@ Mute always follows the virtual device: muting it mutes the target, unmuting un-
 - **The virtual device's flyout cannot display the target's level.** What you drag to is what the target gets, but the slider snaps back to 98% afterwards. Use the target device's own flyout/volume mixer or the tray tooltip to read the real level.
 - **Startup leaves your levels alone.** The virtual device is set to 98%, but the target's volume and both mute states stay untouched until your first knob turn or volume change.
 - **The target is not monitored.** If another app changes the target's volume, the tooltip can lag until your next interaction.
+- **Only the Windows default output is watched.** Volume controls handled entirely inside a vendor app, without changing the Windows default volume, are not intercepted.
 - **SteelSeries GG integration is best-effort.** It relies on an undocumented local API. If a GG update breaks it, Auto falls back to the single physical non-default device and reports the problem in the tooltip. Manual device selection always works without GG.
 
 ---
