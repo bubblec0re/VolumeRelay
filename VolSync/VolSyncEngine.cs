@@ -106,6 +106,14 @@ public class VolSyncEngine : IDisposable
         // Resolve target (non-auto immediately; auto on first poll)
         lock (_lock)
         {
+            // A saved target may no longer exist (driver uninstalled, different port).
+            if (_targetId != "auto" && !_devices.Any(d => d.Id == _targetId))
+            {
+                _targetId = "auto";
+                _settings.Target = "auto";
+                SettingsStore.Save(_settings);
+            }
+
             if (_targetId != "auto")
                 ResolveTargetLocked();
         }
@@ -234,14 +242,13 @@ public class VolSyncEngine : IDisposable
                 }
             }
 
-            if (muteChanged && _targetVolume != null)
+            if (muteChanged)
             {
-                try
-                {
-                    _targetVolume.Mute = newMute;
-                }
-                catch { }
                 _lastPipeMute = newMute;
+                if (_targetVolume != null)
+                {
+                    try { _targetVolume.Mute = newMute; } catch { }
+                }
             }
 
             if (volumeChanged || muteChanged)

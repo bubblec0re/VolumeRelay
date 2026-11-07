@@ -12,7 +12,20 @@ public class TrayApp : Form
 
     public TrayApp()
     {
+        // Tray-only app: never show a window. The form exists solely to own a
+        // message loop / handle for Invoke, and as the owner for dialogs.
+        ShowInTaskbar = false;
+        FormBorderStyle = FormBorderStyle.None;
+        StartPosition = FormStartPosition.Manual;
+        WindowState = FormWindowState.Minimized;
+        Opacity = 0;
+        ShowIcon = false;
+
         _settings = SettingsStore.Load();
+
+        // Refresh the Run entry so a moved or updated exe keeps a valid path.
+        if (_settings.AutoStart) AutoStart.SetEnabled(true);
+
         _engine = new VolSyncEngine(_settings);
 
         _notify = new NotifyIcon
@@ -28,6 +41,18 @@ public class TrayApp : Form
 
         _engine.Start();
         RebuildUi();
+    }
+
+    /// <summary>Keep the window permanently hidden while still creating a handle.</summary>
+    protected override void SetVisibleCore(bool value)
+    {
+        if (!IsHandleCreated)
+        {
+            CreateHandle();
+            base.SetVisibleCore(false);
+            return;
+        }
+        base.SetVisibleCore(false);
     }
 
     protected override void OnFormClosed(FormClosedEventArgs e)
@@ -82,15 +107,18 @@ public class TrayApp : Form
         if (targetId == null)
         {
             var status = _engine.AutoStatus ?? "no target";
-            _notify.Text = "VolSync — " + status;
+            _notify.Text = Clip("VolSync — " + status);
             return;
         }
 
         var vol = _engine.TargetVolume * 100;
         var name = _engine.TargetName ?? targetId;
         var prefix = _engine.TargetId == "auto" ? "Auto: " : "";
-        _notify.Text = $"VolSync — {vol:0}% → {prefix}{name}";
+        _notify.Text = Clip($"VolSync — {vol:0}% → {prefix}{name}");
     }
+
+    /// <summary>NotifyIcon.Text throws above 63 chars — keep it short.</summary>
+    static string Clip(string s) => s.Length <= 63 ? s : s[..60] + "…";
 
     void OpenSettings()
     {
