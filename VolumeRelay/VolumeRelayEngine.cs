@@ -118,10 +118,11 @@ public class VolumeRelayEngine : IDisposable
                 ResolveTargetLocked();
         }
 
-        // Gentle startup: set pipe to pin value (only if not passive)
+        // Gentle startup: set the pipe to the pin value, but only if the default
+        // really is our virtual pipe (see PipeIsVirtualLocked).
         lock (_lock)
         {
-            if (!IsPassiveLocked() && _pipeVolume != null)
+            if (!IsPassiveLocked() && PipeIsVirtualLocked() && _pipeVolume != null)
             {
                 _lastPipeWrite = DateTime.Now;
                 _pipeVolume.MasterVolumeLevelScalar = _pinValue;
@@ -208,7 +209,7 @@ public class VolumeRelayEngine : IDisposable
     {
         lock (_lock)
         {
-            if (_paused || IsPassiveLocked()) return;
+            if (_paused || IsPassiveLocked() || !PipeIsVirtualLocked()) return;
 
             float newVol = data.MasterVolume;
             bool newMute = data.Muted;
@@ -361,6 +362,20 @@ public class VolumeRelayEngine : IDisposable
         return targetId != null && targetId != "" && targetId == _pipeId;
     }
 
+    /// <summary>
+    /// A pipe only exists when the Windows default is a *virtual* device. If the
+    /// default is physical, the knob already controls something real: redirecting
+    /// would attenuate twice (physical × physical) and pinning it would overwrite
+    /// a deliberately chosen level (a monitor at 40%, IEMs at 10%).
+    /// This matters at logon, where the default may not be Sonar yet — we must not
+    /// pin whatever physical device happens to be default and then walk away.
+    /// </summary>
+    bool PipeIsVirtualLocked()
+    {
+        if (_pipeId == null) return false;
+        return _devices.Any(d => d.Id == _pipeId && d.IsVirtual);
+    }
+
     // ---- Devices ----
 
     public void RefreshDevices()
@@ -383,8 +398,8 @@ public class VolumeRelayEngine : IDisposable
                     _lastPipeMute = _pipeVolume.Mute;
                     _pipeVolume.OnVolumeNotification += _pipeHandler;
 
-                    // Reset new default to pin value
-                    if (!IsPassiveLocked())
+                    // Reset new default to pin value (virtual pipe only)
+                    if (!IsPassiveLocked() && PipeIsVirtualLocked())
                     {
                         _lastPipeWrite = DateTime.Now;
                         _pipeVolume.MasterVolumeLevelScalar = _pinValue;
