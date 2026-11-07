@@ -1,16 +1,16 @@
 using Microsoft.Win32;
 
-namespace VolSync;
+namespace VolumeRelay;
 
 /// <summary>
 /// Auto-start with Windows via the HKCU Run key.
-/// [DANGER] writes/removes HKCU\Software\Microsoft\Windows\CurrentVersion\Run\VolSync
+/// [DANGER] writes/removes HKCU\Software\Microsoft\Windows\CurrentVersion\Run\VolumeRelay
 /// — only called from the in-app toggle (default off).
 /// </summary>
 public static class AutoStart
 {
     const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    const string ValueName = "VolSync";
+    const string ValueName = "VolumeRelay";
 
     public static bool IsEnabled()
     {

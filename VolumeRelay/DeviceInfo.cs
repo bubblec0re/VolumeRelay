@@ -1,4 +1,4 @@
-namespace VolSync;
+namespace VolumeRelay;
 
 public record DeviceInfo(string Id, string Name, bool IsVirtual, bool IsDefault)
 {

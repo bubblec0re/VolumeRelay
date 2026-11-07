@@ -1,16 +1,16 @@
 using System.IO;
 using System.Windows.Forms;
-using VolSync;
+using VolumeRelay;
 
 static class Program
 {
     [STAThread]
     static void Main()
     {
-        using var mutex = new Mutex(true, "VolSync_SingleInstance", out bool createdNew);
+        using var mutex = new Mutex(true, "VolumeRelay_SingleInstance", out bool createdNew);
         if (!createdNew)
         {
-            MessageBox.Show("VolSync is already running — look for its icon in the system tray.", "VolSync");
+            MessageBox.Show("VolumeRelay is already running — look for its icon in the system tray.", "VolumeRelay");
             return;
         }
 

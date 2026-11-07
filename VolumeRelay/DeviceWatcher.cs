@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 
-namespace VolSync;
+namespace VolumeRelay;
 
 /// <summary>COM callback for endpoint add/remove/state/default events.</summary>
 [ComVisible(true)]

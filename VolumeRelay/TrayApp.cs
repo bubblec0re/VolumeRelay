@@ -2,12 +2,12 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace VolSync;
+namespace VolumeRelay;
 
 public class TrayApp : Form
 {
     readonly Settings _settings;
-    readonly VolSyncEngine _engine;
+    readonly VolumeRelayEngine _engine;
     readonly NotifyIcon _notify;
 
     public TrayApp()
@@ -31,12 +31,12 @@ public class TrayApp : Form
         // Refresh the Run entry so a moved or updated exe keeps a valid path.
         if (_settings.AutoStart) AutoStart.SetEnabled(true);
 
-        _engine = new VolSyncEngine(_settings);
+        _engine = new VolumeRelayEngine(_settings);
 
         _notify = new NotifyIcon
         {
             Icon = CreateIcon(),
-            Text = "VolSync",
+            Text = "VolumeRelay",
             Visible = true,
         };
 
@@ -134,7 +134,7 @@ public class TrayApp : Form
     {
         if (_engine.Paused)
         {
-            _notify.Text = "VolSync — paused";
+            _notify.Text = "VolumeRelay — paused";
             return;
         }
 
@@ -142,14 +142,14 @@ public class TrayApp : Form
         if (targetId == null)
         {
             var status = _engine.AutoStatus ?? "no target";
-            _notify.Text = Clip("VolSync — " + status);
+            _notify.Text = Clip("VolumeRelay — " + status);
             return;
         }
 
         var vol = _engine.TargetVolume * 100;
         var name = _engine.TargetName ?? targetId;
         var prefix = _engine.TargetId == "auto" ? "Auto: " : "";
-        _notify.Text = Clip($"VolSync — {vol:0}% → {prefix}{name}");
+        _notify.Text = Clip($"VolumeRelay — {vol:0}% → {prefix}{name}");
     }
 
     /// <summary>NotifyIcon.Text throws above 63 chars — keep it short.</summary>

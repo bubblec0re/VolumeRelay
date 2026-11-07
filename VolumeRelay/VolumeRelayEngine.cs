@@ -1,13 +1,13 @@
 using NAudio.CoreAudioApi;
 
-namespace VolSync;
+namespace VolumeRelay;
 
 /// <summary>
 /// Delta-based redirect engine: intercepts volume/mute changes on the default
 /// (virtual Sonar) endpoint, applies the delta to a single physical target,
 /// and resets the pipe to the pin value (~98%).
 /// </summary>
-public class VolSyncEngine : IDisposable
+public class VolumeRelayEngine : IDisposable
 {
     const float DefaultPin = 0.98f;
     const float Epsilon = 0.001f;
@@ -82,7 +82,7 @@ public class VolSyncEngine : IDisposable
         }
     }
 
-    public VolSyncEngine(Settings settings)
+    public VolumeRelayEngine(Settings settings)
     {
         _settings = settings;
         _targetId = settings.Target;

@@ -1,6 +1,6 @@
 using NAudio.CoreAudioApi;
 
-namespace VolSync;
+namespace VolumeRelay;
 
 public static class DeviceHelper
 {

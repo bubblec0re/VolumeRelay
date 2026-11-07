@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text.Json;
 
-namespace VolSync;
+namespace VolumeRelay;
 
 public class Settings
 {
@@ -15,7 +15,7 @@ public class Settings
 public static class SettingsStore
 {
     static string Dir => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VolSync");
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VolumeRelay");
     static string FilePath => Path.Combine(Dir, "settings.json");
     static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 

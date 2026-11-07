@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text.Json;
 
-namespace VolSync;
+namespace VolumeRelay;
 
 /// <summary>
 /// Best-effort client for the SteelSeries Sonar local HTTP API.
