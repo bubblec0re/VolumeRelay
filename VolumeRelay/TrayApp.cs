@@ -6,7 +6,6 @@ namespace VolumeRelay;
 
 public class TrayApp : Form
 {
-    readonly Settings _settings;
     readonly VolumeRelayEngine _engine;
     readonly NotifyIcon _notify;
 
@@ -26,12 +25,10 @@ public class TrayApp : Form
         // own thread. Create it on the UI thread before anything can fire.
         CreateHandle();
 
-        _settings = SettingsStore.Load();
-
         // Refresh the Run entry so a moved or updated exe keeps a valid path.
-        if (_settings.AutoStart) AutoStart.SetEnabled(true);
+        if (AutoStart.IsEnabled()) AutoStart.SetEnabled(true);
 
-        _engine = new VolumeRelayEngine(_settings);
+        _engine = new VolumeRelayEngine();
 
         _notify = new NotifyIcon
         {
@@ -109,15 +106,13 @@ public class TrayApp : Form
     {
         var item = new ToolStripMenuItem("Start with Windows")
         {
-            // The Run key is the source of truth, not the saved JSON flag.
+            // The Run key is the single source of truth.
             Checked = AutoStart.IsEnabled(),
         };
         item.Click += (s, e) =>
         {
             var enable = !AutoStart.IsEnabled();
             AutoStart.SetEnabled(enable);
-            _settings.AutoStart = enable;
-            SettingsStore.Save(_settings);
             item.Checked = enable;
         };
         return item;

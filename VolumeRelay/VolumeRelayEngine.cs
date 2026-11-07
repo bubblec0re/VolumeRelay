@@ -18,7 +18,6 @@ public class VolumeRelayEngine : IDisposable
     DeviceWatcher? _watcher;
     readonly object _lock = new();
     readonly AudioEndpointVolumeNotificationDelegate _pipeHandler;
-    Settings _settings;
     System.Timers.Timer? _ggTimer;
 
     // Pipe (default / virtual device)
@@ -33,7 +32,7 @@ public class VolumeRelayEngine : IDisposable
     // Target
     MMDevice? _targetDevice;
     AudioEndpointVolume? _targetVolume;
-    string _targetId = "auto";
+    string _targetId = "auto";   // session only; always starts on Auto
     string? _resolvedAutoTargetId;
 
     // State
@@ -82,10 +81,8 @@ public class VolumeRelayEngine : IDisposable
         }
     }
 
-    public VolumeRelayEngine(Settings settings)
+    public VolumeRelayEngine()
     {
-        _settings = settings;
-        _targetId = settings.Target;
         _pipeHandler = e => OnPipeChanged(e);
     }
 
@@ -113,18 +110,10 @@ public class VolumeRelayEngine : IDisposable
         RefreshDevices();
         AnchorPipe();
 
-        // Resolve target (non-auto immediately; auto on first poll)
+        // Starts on Auto: GG's routing is the target by design. There is no
+        // persisted manual choice, so nothing to validate or fall back from.
         lock (_lock)
         {
-            // A saved target may no longer exist (driver uninstalled, different
-            // port) or may have been a virtual device, which is never valid.
-            if (_targetId != "auto" && !_devices.Any(d => d.Id == _targetId && !d.IsVirtual))
-            {
-                _targetId = "auto";
-                _settings.Target = "auto";
-                SettingsStore.Save(_settings);
-            }
-
             if (_targetId != "auto")
                 ResolveTargetLocked();
         }
@@ -343,8 +332,6 @@ public class VolumeRelayEngine : IDisposable
             else
                 _resolvedAutoTargetId = null;
             ResolveTargetDeviceLocked();
-            _settings.Target = id;
-            SettingsStore.Save(_settings);
         }
         StateChanged?.Invoke();
     }

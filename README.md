@@ -72,6 +72,7 @@ So a real device that happens to be *named* "Sonar Pro" or "CABLE Link" is still
 - **Auto** is strict: it only picks a device when *all* configured render channels (`game`, `media`, `chat`, `aux`) route to a **single** device. If routing is split across devices, Auto reports *"split routing — pick a device"* and writes to nothing — one knob must not drive two devices.
 - **No volume carryover** — switching targets never copies one device's level onto another. Devices legitimately sit at different levels (a headset at 100%, a monitor at 40%, IEMs at 10%). Copying would be wrong and potentially dangerously loud.
 - If the Windows default device *is* the selected target, VolumeRelay goes **passive** and the knob controls it natively.
+- **No config file.** VolumeRelay writes nothing to disk and keeps no state of its own. It always starts on **Auto** — following GG is the entire point — and a manual pick lasts until you exit. The only thing it ever persists is the optional `HKCU\...\Run` entry behind *Start with Windows*, and that lives in the registry, not a file.
 
 ### Mute
 
