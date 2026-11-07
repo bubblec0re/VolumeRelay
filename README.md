@@ -20,10 +20,14 @@ VolumeRelay keeps the virtual default at a fixed pass-through level and moves th
 
 1. The virtual default device is treated as a **neutral pipe**, pinned just below max at **98%**.
 2. VolumeRelay listens for volume/mute notifications on that pipe.
-3. On a change it computes the **delta** (the pipe moves ~2% per knob detent) and applies that delta to **one selected physical target**.
+3. On a change it works out what the change *means*: a **knob detent** is a relative ~2% step and is added to the target's level, while the **flyout slider** is absolute and sets the target to the level you dragged to.
 4. It then snaps the pipe back to 98%.
 
 So the physical device holds the real 0–100% range, the pipe stays audibly transparent (−0.18 dB), and nothing is attenuated twice.
+
+### Telling the slider from the knob
+
+Both arrive as the same WASAPI notification, carrying only the new volume — but not quite: the shell's flyout passes an **event context GUID**, while the HID volume keys pass **none**. So `EventContext != Guid.Empty` means "this came from the volume UI" and empty means "a hotkey or knob step". That distinction is free — no input hooks, no heuristics, nothing to misread.
 
 ### Why 98% and not 100%
 
@@ -85,7 +89,7 @@ Mute states are **ignored at startup** on purpose: VolumeRelay reads neither dev
 
 ## Known limitations
 
-- **The virtual device's flyout is a relative jog, not an absolute slider.** Dragging it shifts the target by the delta, then it snaps back to 98%. The pipe has to stay near max to keep its headroom, so its slider cannot show the target's actual level. Low impact — Sonar's virtual device volume is rarely touched by hand. **The honest absolute controls are the target device's own flyout/volume mixer and the keyboard knob** — VolumeRelay never touches the target's own UI.
+- **The virtual device's flyout cannot *display* the target's level.** What you drag to is what the target gets, but the slider returns to 98% afterwards, because the pipe has to stay near max to keep the knob's headroom. The honest *displays* are the target device's own flyout/volume mixer and the tray tooltip. (VolumeRelay never touches the target's own UI.)
 - **Startup leaves your levels alone:** the pipe is set to 98%, but the target's current volume and both mute states are untouched until your first knob turn.
 - **The target is not monitored.** If something else changes the target's volume, the tooltip can lag until your next interaction.
 - **GG integration is best-effort.** It depends on an *undocumented* SteelSeries local API (see below). If GG updates and changes it, Auto degrades: it holds the last known target, or falls back to the single physical non-default device, and says so in the tooltip. Manual device selection always works without GG.

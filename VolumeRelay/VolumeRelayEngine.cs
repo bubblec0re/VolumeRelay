@@ -278,16 +278,22 @@ public class VolumeRelayEngine : IDisposable
 
             if (volumeChanged)
             {
+                // The shell's volume flyout passes an event context; the HID
+                // volume keys (the knob) pass none. That distinguishes the two
+                // sources for free: a slider position is an absolute level, a
+                // knob detent is a relative step.
+                bool fromSlider = data.EventContext != Guid.Empty;
                 float delta = newVol - _lastPipeVolume;
                 _lastPipeVolume = newVol;
 
-                // Apply delta to target
                 if (_targetVolume != null)
                 {
                     try
                     {
-                        float newTarget = Math.Clamp(_targetVolume.MasterVolumeLevelScalar + delta, 0f, 1f);
-                        _targetVolume.MasterVolumeLevelScalar = newTarget;
+                        float newTarget = fromSlider
+                            ? newVol
+                            : _targetVolume.MasterVolumeLevelScalar + delta;
+                        _targetVolume.MasterVolumeLevelScalar = Math.Clamp(newTarget, 0f, 1f);
                     }
                     catch { }
                 }

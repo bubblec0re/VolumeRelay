@@ -173,6 +173,33 @@ if (mode == "props")
     return;
 }
 
+
+if (mode == "setctx")
+{
+    // Spike: write the DEFAULT endpoint's volume WITH an event context, which is
+    // how the shell's volume flyout does it (see 'notify': the knob passes none).
+    // usage: setctx <0..1> [guid]
+    float v = float.Parse(args[1], System.Globalization.CultureInfo.InvariantCulture);
+    var ctx = args.Length > 2 && Guid.TryParse(args[2], out var gg)
+        ? gg
+        : new Guid("dd9d3f1d-50d0-4db7-bf63-0362902def26");
+
+    var clsidE = new Guid("BCDE0395-E52F-467C-8E3D-C4579291692E");
+    var iidE = new Guid("A95664D2-9614-4F35-A746-DE8DB63617E6");
+    var c = clsidE;
+    hrCheck(Native.CoCreateInstance(ref c, IntPtr.Zero, 1, ref iidE, out IntPtr ep));
+    var en = (IMMDeviceEnumerator)Marshal.GetObjectForIUnknown(ep)!;
+    hrCheck(en.GetDefaultAudioEndpoint(0, 0, out IntPtr dp));
+    var dv = (IMMDevice)Marshal.GetObjectForIUnknown(dp)!;
+    var iidV = new Guid("5CDF2C82-841E-4546-9722-0CF74078229A");
+    hrCheck(dv.Activate(ref iidV, 2, IntPtr.Zero, out IntPtr vp));
+    var av = (IAudioEndpointVolume)Marshal.GetObjectForIUnknown(vp)!;
+    hrCheck(av.SetMasterVolumeLevelScalar(v, ref ctx));
+    av.GetMasterVolumeLevelScalar(out float rb);
+    Console.WriteLine($"setctx ctx={ctx} set={v:F2} readback={rb:F2}");
+    return;
+}
+
 if (mode == "table")
 {
     var enum2 = new MMDeviceEnumerator();
@@ -528,7 +555,8 @@ class VolumeCallback : IAudioEndpointVolumeCallback
     public int OnNotify(IntPtr p)
     {
         var d = Marshal.PtrToStructure<AVolNotifyData>(p);
-        Console.WriteLine($"[notify] volume={d.fMasterVolume:F2}  mute={d.bMuted != 0}  channels={d.nChannels}  ctx={d.guidEventContext}");
+        var ts = DateTime.Now.ToString("HH:mm:ss.fff");
+        Console.WriteLine($"[{ts}] volume={d.fMasterVolume:F4}  mute={d.bMuted != 0}  channels={d.nChannels}  ctx={d.guidEventContext}");
         return 0;
     }
 }
