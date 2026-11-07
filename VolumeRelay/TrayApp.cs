@@ -127,22 +127,30 @@ public class TrayApp : Form
 
     void UpdateTooltip()
     {
-        if (_engine.Paused)
+        switch (_engine.Mode)
         {
-            _notify.Text = "VolumeRelay — paused";
-            return;
-        }
+            case RelayMode.Paused:
+                _notify.Text = "VolumeRelay — paused";
+                return;
 
-        var targetId = _engine.ResolvedTargetId;
-        if (targetId == null)
-        {
-            var status = _engine.AutoStatus ?? "no target";
-            _notify.Text = Clip("VolumeRelay — " + status);
-            return;
+            // The app is not touching anything in these states; saying otherwise
+            // would read as active redirection.
+            case RelayMode.DefaultIsTarget:
+                _notify.Text = Clip("VolumeRelay — passive, knob controls " +
+                                    (_engine.TargetName ?? "the default device"));
+                return;
+
+            case RelayMode.DefaultNotVirtual:
+                _notify.Text = "VolumeRelay — idle, default is a physical device";
+                return;
+
+            case RelayMode.NoTarget:
+                _notify.Text = Clip("VolumeRelay — " + (_engine.AutoStatus ?? "no target"));
+                return;
         }
 
         var vol = _engine.TargetVolume * 100;
-        var name = _engine.TargetName ?? targetId;
+        var name = _engine.TargetName ?? "target";
         var prefix = _engine.TargetId == "auto" ? "Auto: " : "";
         _notify.Text = Clip($"VolumeRelay — {vol:0}% → {prefix}{name}");
     }

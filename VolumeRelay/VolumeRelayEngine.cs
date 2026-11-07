@@ -2,6 +2,20 @@ using NAudio.CoreAudioApi;
 
 namespace VolumeRelay;
 
+/// <summary>What the app is actually doing right now, for the tray tooltip.</summary>
+public enum RelayMode
+{
+    /// <summary>Redirecting the pipe's deltas onto the target.</summary>
+    Active,
+    Paused,
+    /// <summary>The Windows default IS the target — the knob controls it natively.</summary>
+    DefaultIsTarget,
+    /// <summary>The default device is physical, so there is no pipe to intercept.</summary>
+    DefaultNotVirtual,
+    /// <summary>Auto has nothing to aim at (GG unavailable, or routing is split).</summary>
+    NoTarget,
+}
+
 /// <summary>
 /// Delta-based redirect engine: intercepts volume/mute changes on the default
 /// (virtual Sonar) endpoint, applies the delta to a single physical target,
@@ -68,6 +82,29 @@ public class VolumeRelayEngine : IDisposable
             var id = ResolvedTargetId;
             if (id == null) return _targetId == "auto" ? "auto" : "none";
             return _devices.FirstOrDefault(d => d.Id == id)?.Name ?? id;
+        }
+    }
+
+    /// <summary>
+    /// What the app is doing right now. Passive states must not be reported as if
+    /// redirection were happening — the tooltip is the only window into the engine.
+    /// </summary>
+    public RelayMode Mode
+    {
+        get
+        {
+            lock (_lock)
+            {
+                if (_paused) return RelayMode.Paused;
+
+                var targetId = _targetId == "auto" ? _resolvedAutoTargetId : _targetId;
+                if (targetId != null && targetId != "" && targetId == _pipeId)
+                    return RelayMode.DefaultIsTarget;
+
+                if (!PipeIsVirtualLocked()) return RelayMode.DefaultNotVirtual;
+                if (targetId == null || targetId == "") return RelayMode.NoTarget;
+                return RelayMode.Active;
+            }
         }
     }
 
