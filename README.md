@@ -3,6 +3,7 @@
 A small Windows tray app that makes the **physical volume knob on your keyboard** and the **Windows volume UI** control the physical output device you are actually listening through — even when SteelSeries Sonar/GG has pinned a virtual device as the Windows default.
 
 - **Platform:** Windows 10/11 (x64)
+- **Download:** [latest release](https://github.com/bubblec0re/VolumeRelay/releases/latest) — one self-contained `VolumeRelay.exe`
 - **Runtime:** building from source requires the .NET 8 SDK
 - **Footprint:** single tray icon, no drivers, no services, no installer
 
@@ -37,7 +38,7 @@ Dragging the flyout slider to 40% sets the target to 40%; nudging the knob up on
 
 ## Getting started
 
-1. Build or obtain `VolumeRelay.exe` (see [Building](#building)).
+1. Download `VolumeRelay.exe` from [Releases](https://github.com/bubblec0re/VolumeRelay/releases/latest), or build it yourself (see [Building](#building)).
 2. Run it. The app starts silently in the notification area — there is no window.
 3. Right-click the tray icon and pick your physical output device, or leave **Auto** selected to follow SteelSeries GG.
 4. Turn the knob or move the Windows volume slider. The physical device's level changes.
@@ -126,6 +127,16 @@ dotnet publish .\VolumeRelay\VolumeRelay.csproj -c Release -r win-x64 `
 ```
 
 Run `dist\VolumeRelay.exe` directly (not via `dotnet VolumeRelay.exe`).
+
+### Releases
+
+GitHub Actions builds and publishes the exe automatically:
+
+- every push to `master` that touches `VolumeRelay/` updates the rolling **Latest build** release;
+- pushing a `v*` tag (for example `v1.1.0`) creates a versioned release;
+- either can be triggered by hand from the **Actions** tab.
+
+The stable download link is <https://github.com/bubblec0re/VolumeRelay/releases/latest/download/VolumeRelay.exe>.
 
 ---
 

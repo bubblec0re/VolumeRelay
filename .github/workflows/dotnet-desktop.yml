@@ -1,0 +1,87 @@
+name: Build and release
+
+# Builds the self-contained Windows exe and publishes it to GitHub Releases.
+#
+#   push to master  -> updates the rolling "Latest build" release (tag: latest)
+#   push a v* tag   -> creates a versioned release
+#   manual run      -> same as a push to master
+#
+# Note: the repository must allow write access for workflows
+# (Settings -> Actions -> General -> Workflow permissions -> "Read and write").
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'VolumeRelay/**'
+      - '.github/workflows/dotnet-desktop.yml'
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Work out version and release tag
+        id: meta
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') {
+            $tag = $env:GITHUB_REF_NAME
+            $version = $tag -replace '^v', ''
+            $title = "VolumeRelay $tag"
+          } else {
+            $tag = 'latest'
+            $version = "1.0.$env:GITHUB_RUN_NUMBER"
+            $title = 'Latest build'
+          }
+          "tag=$tag"           >> $env:GITHUB_OUTPUT
+          "version=$version"   >> $env:GITHUB_OUTPUT
+          "title=$title"       >> $env:GITHUB_OUTPUT
+          Write-Host "Releasing $tag (version $version)"
+
+      - name: Publish self-contained exe
+        shell: pwsh
+        run: >
+          dotnet publish VolumeRelay/VolumeRelay.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:DebugType=none
+          -p:Version=${{ steps.meta.outputs.version }}
+          -o dist
+
+      - name: Verify the exe exists
+        shell: pwsh
+        run: |
+          $exe = Get-Item dist/VolumeRelay.exe -ErrorAction Stop
+          Write-Host ("Built VolumeRelay.exe ({0:N1} MB)" -f ($exe.Length / 1MB))
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.title }}
+          body: |
+            Self-contained Windows x64 build of VolumeRelay ${{ steps.meta.outputs.version }}.
+
+            Download `VolumeRelay.exe` and run it — no .NET installation required.
+          files: dist/VolumeRelay.exe
+          fail_on_unmatched_files: true
+          make_latest: true
