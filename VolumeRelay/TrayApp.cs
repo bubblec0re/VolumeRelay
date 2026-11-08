@@ -79,7 +79,9 @@ public class TrayApp : Form
     void RebuildUi()
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add(MakeTargetItem("auto", "Auto — follow GG's selection"));
+        // TargetName resolves the auto target to the device GG has selected;
+        // it falls back to "auto" when nothing is resolved yet.
+        menu.Items.Add(MakeTargetItem("auto", $"Auto (GG): {_engine.TargetName}"));
 
         // Only physical outputs are offered: a virtual device must never route
         // into another virtual device, and the default/virtual pipe is itself
