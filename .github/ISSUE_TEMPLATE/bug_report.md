@@ -14,8 +14,7 @@ assignees: ''
 
 ## What did the tray tooltip say?
 
-<!-- The tooltip is the app's only status display. What did it show when it misbehaved?
-     e.g. "disabled: real device Sonar selected", "GG unavailable", "98%: Speakers" -->
+<!-- The tooltip is the app's only status display. What did it show when it misbehaved?-->
 
 ## When does it happen?
 
@@ -25,12 +24,6 @@ assignees: ''
 - [ ] Always / continuously
 - [ ] Other:
 
-## Setup
-
-- Windows version: <!-- e.g. Windows 11 24H2 (the diagnostics report has the exact build) -->
-- SteelSeries GG version: <!-- GG app → Settings → about, if known -->
-- Is the physical output wired to Sonar? <!-- e.g. "yes, all channels go to my DAC", "I don't use Sonar, just want the knob to work" -->
-
 ## Diagnostics
 
 ```
@@ -39,4 +32,3 @@ assignees: ''
 
 ## Anything else?
 
-<!-- Screenshots, when it started, workarounds you found — anything helps. -->
