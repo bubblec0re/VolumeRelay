@@ -10,7 +10,7 @@ A small Windows tray app that makes the **physical volume knob on your keyboard*
 ---
 
 ## What it does
-Allows to use hotkeys and volume knobs to adjust the actual volume of the device that GG routes its outputs into. When SteelSeries Sonar is active, it sets a virtual device ("SteelSeries Sonar - Gaming") as the Windows default output. Physical volume wheels and hotkeys, as well as the Windows volume control then only change *that* virtual device's volume, while your headphones or speakers keep their own separate level — so the knob only changes the volume of whatever apps were routed by Sonar into that virtual device.
+It lets you use hotkeys and volume knobs to adjust the actual volume of the device that GG routes its outputs into. When SteelSeries Sonar is active, it sets a virtual device ("SteelSeries Sonar - Gaming") as the Windows default output. Physical volume wheels and hotkeys, as well as the Windows volume control, then only change *that* virtual device's volume, while your headphones or speakers keep their own separate level — so the knob only changes the volume of whatever apps were routed by Sonar into that virtual device.
 
 VolumeRelay fixes this by:
 
@@ -28,10 +28,11 @@ The result: the knob and the Windows UI control the device you actually hear, an
 | Keyboard knob / roller / wheel, media Volume Up/Down keys | relative step (~2%) |
 | Windows volume UI slider, Settings > Sound, the device slider in Volume Mixer | absolute level |
 | Any mute key or mute toggle | mirrored to the target |
+| Own flyout slider and mute icon (left-click the tray icon) | absolute level — written directly to the target device |
 
-Only the Windows **default output device** is watched, so any control that changes its volume is picked up; per-app mixer sliders are not — they change a single app's level, not the device's.
+The tray icon's flyout is the primary control: it sets the real device's level, and its display is always accurate. Use it to read and set the real volume.
 
-> **Ignore the Windows volume slider.** The native slider, flyout and sound dialog operate on the pinned virtual device, so their displayed values are meaningless — they snap back to ~98% right after every change. The amount you change is still relayed to your target, but for reading and setting the real level, use the VolumeRelay flyout (left-click the tray icon) or the tray tooltip.
+> **Ignore the Windows volume slider.** The native slider, flyout and sound dialog operate on the pinned virtual device, so their displayed values are meaningless — they will snap back to 98% right after every change. The amount you change is still relayed to your target, but for reading and setting the real level, use the VolumeRelay flyout (left-click the tray icon) or the tray tooltip.
 
 ---
 
@@ -48,7 +49,18 @@ VolumeRelay stores no settings file and keeps no state of its own. It always sta
 
 ---
 
-## Tray menu
+## Tray icon
+
+### Left-click: Volume flyout
+
+**Left-click the tray icon** — or just turn the volume knob while VolumeRelay is relaying — to open the VolumeRelay flyout: it shows and controls the **target device's** volume and mute directly.
+
+- Knob turns open the flyout with the real target level and keep it live while it is open.
+- Drag the slider or click the speaker icon to set the target device's volume or mute directly — the virtual device stays pinned at 98%.
+- It auto-hides after ~2.5 s unless hovered; click the tray icon again to dismiss it.
+- The native Windows volume flyout is deliberately left untouched: it still appears as usual and still controls the virtual device — exactly the same as without VolumeRelay. When the relay is paused or passive, the flyout says so instead of implying the relay is active.
+
+### Right-click: device selector, autostart, diagnostics
 
 | Item | Meaning |
 |---|---|
@@ -59,14 +71,6 @@ VolumeRelay stores no settings file and keeps no state of its own. It always sta
 | **Start with Windows** | Toggle auto-start; the checkmark reflects the actual registry entry |
 | **Exit** | Quit |
 
-### Volume flyout
-
-**Left-click the tray icon** — or just turn the volume knob while VolumeRelay is relaying — to open the VolumeRelay flyout: it shows and controls the **target device's** volume and mute directly, with its own look, deliberately not a Windows-flyout imitation.
-
-- Knob turns pop the flyout with the real target level and keep it live while it is open.
-- Drag the slider or click the speaker icon to set the target device's volume or mute directly — the virtual device stays pinned at 98%.
-- It never steals focus (safe over fullscreen apps) and auto-hides after ~2.5 s unless hovered; click the tray icon again to dismiss it.
-- The native Windows volume flyout is deliberately left untouched: it still appears as usual and still controls the virtual device — exactly the same as without VolumeRelay. When the relay is paused or passive, the flyout says so instead of implying the relay is active.
 
 ### Tooltip
 
@@ -92,7 +96,7 @@ Hovering the tray icon reports the current state:
 
 ### Mute
 
-Mute always follows the virtual device: muting it mutes the target, unmuting un-mutes it. The native Windows sound icon reflects the mute state.
+While relaying, mute follows the virtual device: muting it mutes the target, unmuting unmutes it. The native Windows sound icon reflects the mute state.
 
 ---
 
