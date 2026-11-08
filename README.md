@@ -27,7 +27,7 @@ The result: the knob and the Windows UI control the device you actually hear, an
 | Control | Applied as |
 |---|---|
 | Keyboard knob / roller / wheel, media Volume Up/Down keys | relative step (~2%) |
-| Windows volume flyout, Settings > Sound, the device slider in Volume Mixer | absolute level |
+| Windows volume UI slider, Settings > Sound, the device slider in Volume Mixer | absolute level |
 | Any mute key or mute toggle | mirrored to the target |
 
 Only the Windows **default output device** is watched, so any control that changes its volume is picked up; per-app mixer sliders are not — they change a single app's level, not the device's.
@@ -87,7 +87,7 @@ Mute always follows the virtual device: muting it mutes the target, unmuting un-
 
 ## Known limitations
 
-- **The virtual device's flyout cannot display the target's level.** What you drag to is what the target gets, but the slider snaps back to 98% afterwards. Use the target device's own flyout/volume mixer or the tray tooltip to read the real level.
+- **The virtual device's volume slider cannot display the target's level.** What you drag to is what the target gets, but the slider snaps back to 98% afterwards. Use the target device's own slider/volume mixer or the tray tooltip to read the real level.
 - **Startup leaves your levels alone.** The virtual device is set to 98%, but the target's volume and both mute states stay untouched until your first knob turn or volume change.
 - **The target is not monitored.** If another app changes the target's volume, the tooltip can lag until your next interaction.
 - **Only the Windows default output is watched.** Volume controls handled entirely inside a vendor app, without changing the Windows default volume, are not intercepted.
@@ -103,7 +103,7 @@ Mute always follows the virtual device: muting it mutes the target, unmuting un-
 | Knob does nothing and the tooltip says `disabled` | The Windows default output is already a real device. Enable Sonar routing, or select your device manually in the menu. |
 | Tooltip says `GG unavailable` | SteelSeries GG is not running, or its API changed. Start GG, or pick a device manually. |
 | Tooltip says `split routing — pick a device` | Sonar routes different channels to different outputs. Pick a device manually, or set all Sonar channels to one output. |
-| The flyout slider jumps back to 98% | Expected — the virtual device is kept near max. Read the real level on the target device. |
+| The volume slider jumps back to 98% | Expected — the virtual device is kept near max. Read the real level on the target device. |
 | No devices are listed | No active physical playback devices were found. Connect or enable an output device. |
 
 ---
