@@ -129,6 +129,8 @@ This project is not affiliated with or endorsed by SteelSeries.
 
 VolumeRelay has only been tested on a single machine. If it does not work for you, please open an issue in the [repository](https://github.com/bubblec0re/VolumeRelay/issues).
 
+The code in this repository was written with AI assistance. It is reviewed and maintained by a human developer, but not a C#/Windows audio specialist — read it and use it with that in mind.
+
 ---
 
 ## Licensing
