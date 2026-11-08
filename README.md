@@ -10,8 +10,7 @@ A small Windows tray app that makes the **physical volume knob on your keyboard*
 ---
 
 ## What it does
-
-When SteelSeries Sonar is active, it sets a virtual device ("SteelSeries Sonar - Gaming") as the Windows default output. Physical volume wheels and hotkeys, as well as the Windows volume control then only change *that* virtual device's volume, while your headphones or speakers keep their own separate level — so the knob only changes the volume of whatever apps were routed by Sonar into that virtual device.
+Allows to use hotkeys and volume knobs to adjust the actual volume of the device that GG routes its outputs into. When SteelSeries Sonar is active, it sets a virtual device ("SteelSeries Sonar - Gaming") as the Windows default output. Physical volume wheels and hotkeys, as well as the Windows volume control then only change *that* virtual device's volume, while your headphones or speakers keep their own separate level — so the knob only changes the volume of whatever apps were routed by Sonar into that virtual device.
 
 VolumeRelay fixes this by:
 
@@ -126,6 +125,8 @@ Audio access uses [NAudio](https://github.com/naudio/NAudio) (`NAudio.Wasapi` 2.
 ### Disclaimer
 
 This project is not affiliated with or endorsed by SteelSeries.
+
+VolumeRelay has only been tested on a single machine. If it does not work for you, please open an issue in the [repository](https://github.com/bubblec0re/VolumeRelay/issues).
 
 ---
 
