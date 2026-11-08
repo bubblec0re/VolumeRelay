@@ -48,7 +48,7 @@ jobs:
             $title = "VolumeRelay $tag"
           } else {
             $tag = 'latest'
-            $version = "1.0.$env:GITHUB_RUN_NUMBER"
+            $version = "0.2"
             $title = 'Latest build'
           }
           "tag=$tag"           >> $env:GITHUB_OUTPUT
