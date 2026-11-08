@@ -96,18 +96,7 @@ jobs:
             **About the Windows SmartScreen warning**
 
             This build is unsigned and changes with every new version, so
-            SmartScreen shows its standard "unrecognized app" warning. That is
-            expected for this project — it is not a sign of malware. To verify
-            the download before running:
-
-            1. Compare the file's SHA-256 with the value above (right-click the
-               file → Properties → Details, or run `Get-FileHash VolumeRelay.exe`
-               in PowerShell).
-            2. The source is open and buildable:
-               https://github.com/bubblec0re/VolumeRelay
-            3. Optionally scan the file at https://www.virustotal.com
-
-            Then choose **More info → Run anyway** in the SmartScreen dialog.
+            choose **More info → Run anyway** in the SmartScreen dialog.
           files: dist/VolumeRelay.exe
           fail_on_unmatched_files: true
           make_latest: true
