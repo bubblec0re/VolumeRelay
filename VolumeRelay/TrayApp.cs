@@ -7,6 +7,7 @@ public class TrayApp : Form
 {
     readonly VolumeRelayEngine _engine;
     readonly NotifyIcon _notify;
+    VolumeFlyout? _flyout;
 
     public TrayApp()
     {
@@ -39,6 +40,15 @@ public class TrayApp : Form
         _engine.StateChanged += OnStateChanged;
         _engine.VolumeChanged += OnVolumeChanged;
 
+        // Left-click opens the target-volume flyout (the native one keeps
+        // showing the pinned pipe). Right-click still opens the context menu.
+        _notify.MouseClick += OnNotifyMouseClick;
+
+        // Created eagerly, not on first click: the flyout subscribes to
+        // VolumeChanged to pop on knob adjustments — a lazily created flyout
+        // would miss every knob turn until the first left-click.
+        _flyout = new VolumeFlyout(_engine, _notify.Icon!);
+
         _engine.Start();
         RebuildUi();
     }
@@ -58,6 +68,7 @@ public class TrayApp : Form
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         _engine.Dispose();
+        _flyout?.Dispose();
         _notify.Visible = false;
         _notify.Dispose();
         base.OnFormClosed(e);
@@ -68,6 +79,12 @@ public class TrayApp : Form
         InvokeIfNeeded(RebuildUi);
     }
     void OnVolumeChanged() => InvokeIfNeeded(UpdateTooltip);
+
+    void OnNotifyMouseClick(object? sender, MouseEventArgs e)
+    {
+        if (e.Button != MouseButtons.Left) return;
+        _flyout!.Toggle(); // created eagerly in the constructor; click again to dismiss
+    }
 
     void InvokeIfNeeded(Action a)
     {

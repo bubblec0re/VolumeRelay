@@ -93,6 +93,52 @@ public class VolumeRelayEngine : IDisposable
         get { lock (_lock) return _targetVolume?.Mute ?? false; }
     }
 
+    /// <summary>
+    /// Sets the target device's volume directly (flyout slider). Independent of
+    /// the relay: it never touches the pipe, and the engine subscribes to
+    /// endpoint notifications on the pipe only, so this write cannot feed back
+    /// into the delta logic.
+    /// </summary>
+    public void SetTargetVolume(float value)
+    {
+        lock (_lock)
+        {
+            if (_targetVolume == null) return;
+            var v = Math.Clamp(value, 0f, 1f);
+            try
+            {
+                _targetVolume.MasterVolumeLevelScalar = v;
+                Log($"target volume <- {v:0.000} (flyout)");
+            }
+            catch (Exception ex)
+            {
+                Log("target volume write failed: " + ex.Message);
+                return;
+            }
+        }
+        VolumeChanged?.Invoke();
+    }
+
+    /// <summary>Sets the target device's mute directly (flyout button). See SetTargetVolume.</summary>
+    public void SetTargetMute(bool muted)
+    {
+        lock (_lock)
+        {
+            if (_targetVolume == null) return;
+            try
+            {
+                _targetVolume.Mute = muted;
+                Log($"target mute <- {(muted ? "muted" : "unmuted")} (flyout)");
+            }
+            catch (Exception ex)
+            {
+                Log("target mute write failed: " + ex.Message);
+                return;
+            }
+        }
+        VolumeChanged?.Invoke();
+    }
+
     public string? TargetName
     {
         get

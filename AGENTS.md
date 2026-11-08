@@ -75,6 +75,7 @@ Packaging details (exe metadata properties, the icon, incremental-build traps, h
 - **GG API is undocumented** (discovery: `coreProps.json` → `/subApps` → sonar port → `/classicRedirections`). Every stage is try/catch by design; a GG update may break Auto. Manual device selection must always keep working.
 - `AutoStart.cs` writes the HKCU Run registry key — only from the in-app toggle, default off.
 - `NotifyIcon.Text` throws above 127 chars; tooltip strings are clipped in `TrayApp.Clip`.
+- **`VolumeFlyout.cs` is the app's one extra window** (the sanctioned exception to "no new windows"): left-click on the tray icon toggles it, and relayed volume changes pop it — it shows/controls the TARGET device, since the native flyout keeps showing the pinned pipe. Its look is deliberately NOT a Windows-flyout imitation; it is non-activating (`WS_EX_NOACTIVATE`) so it never steals focus. Slider/mute write the target directly via `SetTargetVolume`/`SetTargetMute`; the engine subscribes to endpoint notifications on the pipe only, so these writes cannot feed back into the delta logic.
 
 ## Conventions
 

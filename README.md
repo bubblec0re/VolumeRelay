@@ -31,6 +31,8 @@ The result: the knob and the Windows UI control the device you actually hear, an
 
 Only the Windows **default output device** is watched, so any control that changes its volume is picked up; per-app mixer sliders are not — they change a single app's level, not the device's.
 
+> **Ignore the Windows volume slider.** The native slider, flyout and sound dialog operate on the pinned virtual device, so their displayed values are meaningless — they snap back to ~98% right after every change. The amount you change is still relayed to your target, but for reading and setting the real level, use the VolumeRelay flyout (left-click the tray icon) or the tray tooltip.
+
 ---
 
 ## Getting started
@@ -38,7 +40,7 @@ Only the Windows **default output device** is watched, so any control that chang
 1. Download `VolumeRelay.exe` from [Releases](https://github.com/bubblec0re/VolumeRelay/releases/latest), or build it yourself (see [AGENTS.md#building](AGENTS.md#building)).
 2. Run it. The app starts silently in the notification area — there is no window.
 3. Right-click the tray icon and pick your physical output device, or leave **Auto** selected to follow SteelSeries GG.
-4. Turn the knob or move the Windows volume slider. The physical device's level changes.
+4. Turn the volume knob. The physical device's level changes — check the real level in the VolumeRelay flyout (left-click the tray icon), not in the Windows volume UI (see [Controls](#controls-it-responds-to)).
 
 To keep it running after a reboot, enable **Start with Windows** in the tray menu.
 
@@ -56,6 +58,15 @@ VolumeRelay stores no settings file and keeps no state of its own. It always sta
 | **Copy diagnostics** | Copies a technical report (device list, engine state, GG API trace, recent events) to the clipboard for pasting into a bug report. Nothing is written to disk; review before sharing. |
 | **Start with Windows** | Toggle auto-start; the checkmark reflects the actual registry entry |
 | **Exit** | Quit |
+
+### Volume flyout
+
+**Left-click the tray icon** — or just turn the volume knob while VolumeRelay is relaying — to open the VolumeRelay flyout: it shows and controls the **target device's** volume and mute directly, with its own look, deliberately not a Windows-flyout imitation.
+
+- Knob turns pop the flyout with the real target level and keep it live while it is open.
+- Drag the slider or click the speaker icon to set the target device's volume or mute directly — the virtual device stays pinned at 98%.
+- It never steals focus (safe over fullscreen apps) and auto-hides after ~2.5 s unless hovered; click the tray icon again to dismiss it.
+- The native Windows volume flyout is deliberately left untouched: it still appears as usual and still controls the virtual device — exactly the same as without VolumeRelay. When the relay is paused or passive, the flyout says so instead of implying the relay is active.
 
 ### Tooltip
 
@@ -87,7 +98,7 @@ Mute always follows the virtual device: muting it mutes the target, unmuting un-
 
 ## Known limitations
 
-- **The virtual device's volume slider cannot display the target's level.** What you drag to is what the target gets, but the slider snaps back to 98% afterwards. Use the target device's own slider/volume mixer or the tray tooltip to read the real level.
+- **The native volume UI still shows the virtual device.** Windows' own flyout, sound dialog and sliders control the virtual device (unchanged behavior); what you drag there is what the target gets, but their display snaps back to 98% afterwards. Read and set the real level in the VolumeRelay flyout (left-click the tray icon) or the tray tooltip.
 - **Startup leaves your levels alone.** The virtual device is set to 98%, but the target's volume and both mute states stay untouched until your first knob turn or volume change.
 - **The target is not monitored.** If another app changes the target's volume, the tooltip can lag until your next interaction.
 - **Only the Windows default output is watched.** Volume controls handled entirely inside a vendor app, without changing the Windows default volume, are not intercepted.
@@ -103,7 +114,7 @@ Mute always follows the virtual device: muting it mutes the target, unmuting un-
 | Knob does nothing and the tooltip says `disabled` | The Windows default output is already a real device. Enable Sonar routing, or select your device manually in the menu. |
 | Tooltip says `GG unavailable` | SteelSeries GG is not running, or its API changed. Start GG, or pick a device manually. |
 | Tooltip says `split routing — pick a device` | Sonar routes different channels to different outputs. Pick a device manually, or set all Sonar channels to one output. |
-| The volume slider jumps back to 98% | Expected — the virtual device is kept near max. Read the real level on the target device. |
+| The volume slider jumps back to 98% | Expected — the virtual device is kept near max. Read the real level in the VolumeRelay flyout (left-click the tray icon) or the tray tooltip. |
 | No devices are listed | No active physical playback devices were found. Connect or enable an output device. |
 
 ---
