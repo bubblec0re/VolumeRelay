@@ -24,21 +24,19 @@ The result: the knob and the Windows UI control the device you actually hear, an
 
 ## Controls it responds to
 
-A physical rotary knob, roller, or wheel built into a keyboard, dedicated Volume Up/Down keys, or anything else that emits the standard Windows volume keys. VolumeRelay treats those as **relative steps** (about 2% per detent or key press). Standard keyboard **media keys** (Volume Up / Volume Down / Mute) take the same path and behave identically.
-
 | Control | Applied as |
 |---|---|
 | Keyboard knob / roller / wheel, media Volume Up/Down keys | relative step (~2%) |
 | Windows volume flyout, Settings > Sound, the device slider in Volume Mixer | absolute level |
 | Any mute key or mute toggle | mirrored to the target |
 
-Dragging the flyout slider to 40% sets the target to 40%; nudging the knob up once raises it by one step. VolumeRelay watches only the Windows **default output device**, so any control that changes that device's volume is picked up. Per-app sliders in the volume mixer are not — they change a single app's level, not the device's.
+Only the Windows **default output device** is watched, so any control that changes its volume is picked up; per-app mixer sliders are not — they change a single app's level, not the device's.
 
 ---
 
 ## Getting started
 
-1. Download `VolumeRelay.exe` from [Releases](https://github.com/bubblec0re/VolumeRelay/releases/latest), or build it yourself (see [Building](#building)).
+1. Download `VolumeRelay.exe` from [Releases](https://github.com/bubblec0re/VolumeRelay/releases/latest), or build it yourself (see [AGENTS.md#building](AGENTS.md#building)).
 2. Run it. The app starts silently in the notification area — there is no window.
 3. Right-click the tray icon and pick your physical output device, or leave **Auto** selected to follow SteelSeries GG.
 4. Turn the knob or move the Windows volume slider. The physical device's level changes.
@@ -79,8 +77,7 @@ Hovering the tray icon reports the current state:
 - Exactly **one** target is controlled at a time. Selecting another device switches the target.
 - **Auto** picks a device only when all of Sonar's render channels (`game`, `media`, `chat`, `aux`) route to a **single** device. If routing is split, Auto controls nothing and asks you to pick a device.
 - **Switching targets never copies volume.** Each device keeps its own level (a headset at 100%, a monitor at 40%, IEMs at 10%).
-- If the Windows default device *is* the selected target, VolumeRelay goes passive and lets the knob control it natively.
-- VolumeRelay only redirects when the Windows default is a **virtual** device. If the default is physical, the knob already controls something real, so the app stays out of the way.
+- If the Windows default is a **physical** device — including the selected target — VolumeRelay goes passive and lets the knob control it natively.
 
 ### Mute
 
@@ -111,7 +108,7 @@ Mute always follows the virtual device: muting it mutes the target, unmuting un-
 
 ---
 
-### Releases
+## Releases
 
 GitHub Actions builds and publishes the exe automatically. The stable download link is <https://github.com/bubblec0re/VolumeRelay/releases/latest/download/VolumeRelay.exe>.
 
@@ -127,8 +124,6 @@ SteelSeries GG/Sonar integration was built from community reverse-engineering kn
 Audio access uses [NAudio](https://github.com/naudio/NAudio) (`NAudio.Wasapi` 2.2.1).
 
 ### Disclaimer
-
-The SteelSeries GG/Sonar local HTTP API is **undocumented**. Endpoints and JSON shapes may change in any GG update. VolumeRelay treats the integration as best-effort.
 
 This project is not affiliated with or endorsed by SteelSeries.
 
