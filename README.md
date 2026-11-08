@@ -110,33 +110,9 @@ Mute always follows the virtual device: muting it mutes the target, unmuting un-
 
 ---
 
-## Building
-
-Any .NET 8 SDK will do:
-
-```powershell
-dotnet build .\VolumeRelay\VolumeRelay.csproj
-```
-
-### Publish a single self-contained exe
-
-```powershell
-dotnet publish .\VolumeRelay\VolumeRelay.csproj -c Release -r win-x64 `
-  --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
-  -o .\dist
-```
-
-Run `dist\VolumeRelay.exe` directly (not via `dotnet VolumeRelay.exe`).
-
 ### Releases
 
-GitHub Actions builds and publishes the exe automatically:
-
-- every push to `master` that touches `VolumeRelay/` updates the rolling **Latest build** release;
-- pushing a `v*` tag (for example `v1.1.0`) creates a versioned release;
-- either can be triggered by hand from the **Actions** tab.
-
-The stable download link is <https://github.com/bubblec0re/VolumeRelay/releases/latest/download/VolumeRelay.exe>.
+GitHub Actions builds and publishes the exe automatically. The stable download link is <https://github.com/bubblec0re/VolumeRelay/releases/latest/download/VolumeRelay.exe>.
 
 ---
 
@@ -151,7 +127,7 @@ Audio access uses [NAudio](https://github.com/naudio/NAudio) (`NAudio.Wasapi` 2.
 
 ### Disclaimer
 
-The SteelSeries GG/Sonar local HTTP API is **undocumented**. Endpoints and JSON shapes may change in any GG update. VolumeRelay treats the integration as best-effort: if it breaks, you lose Auto, not the app.
+The SteelSeries GG/Sonar local HTTP API is **undocumented**. Endpoints and JSON shapes may change in any GG update. VolumeRelay treats the integration as best-effort.
 
 This project is not affiliated with or endorsed by SteelSeries.
 
