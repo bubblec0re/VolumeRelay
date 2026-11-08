@@ -53,6 +53,7 @@ VolumeRelay stores no settings file and keeps no state of its own. It always sta
 | **Auto** | Follow whatever device SteelSeries GG is currently routing all render channels to |
 | **Device names** | Pin one specific physical output device |
 | **Pause relay / Resume relay** | Go fully passive — the virtual device behaves natively, nothing is pinned or redirected |
+| **Copy diagnostics** | Copies a technical report (device list, engine state, GG API trace, recent events) to the clipboard for pasting into a bug report. Nothing is written to disk; review before sharing. |
 | **Start with Windows** | Toggle auto-start; the checkmark reflects the actual registry entry |
 | **Exit** | Quit |
 

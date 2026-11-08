@@ -96,11 +96,28 @@ public class TrayApp : Form
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem(_engine.Paused ? "Resume relay" : "Pause relay", null,
             (s, e) => _engine.SetPaused(!_engine.Paused)));
+        menu.Items.Add(new ToolStripMenuItem("Copy diagnostics", null, (s, e) => CopyDiagnostics()));
         menu.Items.Add(MakeAutoStartItem());
         menu.Items.Add(new ToolStripMenuItem("Exit", null, (s, e) => Close()));
 
         _notify.ContextMenuStrip = menu;
         UpdateTooltip();
+    }
+
+    void CopyDiagnostics()
+    {
+        try
+        {
+            Clipboard.SetText(Diagnostics.Build(_engine));
+            MessageBox.Show(
+                "Diagnostics copied to clipboard — paste it into your bug report.\n\n" +
+                "Review it first: it contains device names and hardware IDs.",
+                "VolumeRelay");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Could not copy diagnostics: " + ex.Message, "VolumeRelay");
+        }
     }
 
     ToolStripMenuItem MakeAutoStartItem()

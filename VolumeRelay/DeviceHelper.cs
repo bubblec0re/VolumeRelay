@@ -36,8 +36,9 @@ public static class DeviceHelper
                 try
                 {
                     var name = device.FriendlyName;
-                    var isVirtual = IsVirtual(device, name);
-                    devices.Add(new DeviceInfo(device.ID, name, isVirtual, device.ID == defaultId));
+                    var (isVirtual, hardwareId, source) = Classify(device, name);
+                    devices.Add(new DeviceInfo(
+                        device.ID, name, isVirtual, device.ID == defaultId, hardwareId, source));
                 }
                 catch { }
             }
@@ -48,7 +49,9 @@ public static class DeviceHelper
     }
 
     /// <summary>
-    /// Decides whether an endpoint is a virtual (software) device.
+    /// Decides whether an endpoint is a virtual (software) device, and records
+    /// the evidence used so diagnostics can distinguish a confident verdict from
+    /// a name-based guess.
     ///
     /// Primary criterion is the device's HardwareIds: Windows enumerates software
     /// audio devices under the ROOT bus, while physical hardware always sits on a
@@ -59,19 +62,30 @@ public static class DeviceHelper
     /// Name markers are only a fallback for the rare case where the property
     /// store cannot be read at all.
     /// </summary>
-    static bool IsVirtual(MMDevice device, string name)
+    static (bool isVirtual, string? hardwareId, string source) Classify(MMDevice device, string name)
     {
-        var byHardwareId = IsVirtualByHardwareId(device);
-        return byHardwareId ?? LooksVirtualByName(name);
+        var raw = ReadHardwareIds(device);
+        if (!string.IsNullOrWhiteSpace(raw))
+        {
+            // "{1}.ROOT\MEDIA\0000" -> "ROOT\MEDIA\0000"
+            var instance = raw;
+            var dot = instance.IndexOf('.');
+            if (dot >= 0 && instance.Length > dot + 1)
+                instance = instance[(dot + 1)..];
+
+            return (instance.StartsWith(@"ROOT\", StringComparison.OrdinalIgnoreCase), raw, "hwid");
+        }
+
+        return (LooksVirtualByName(name), raw, "name");
     }
 
-    /// <summary>null when the property could not be read (unknown).</summary>
-    static bool? IsVirtualByHardwareId(MMDevice device)
+    /// <summary>Raw HardwareIds value, or null when the property could not be read.</summary>
+    static string? ReadHardwareIds(MMDevice device)
     {
         try
         {
             var value = device.Properties[HardwareIdsKey].Value;
-            var raw = value switch
+            return value switch
             {
                 string s => s,
                 System.Collections.IEnumerable list => list.Cast<object>()
@@ -79,16 +93,6 @@ public static class DeviceHelper
                     .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s)),
                 _ => null,
             };
-
-            if (string.IsNullOrWhiteSpace(raw)) return null;
-
-            // "{1}.ROOT\MEDIA\0000" -> "ROOT\MEDIA\0000"
-            var instance = raw;
-            var dot = instance.IndexOf('.');
-            if (dot >= 0 && instance.Length > dot + 1)
-                instance = instance[(dot + 1)..];
-
-            return instance.StartsWith(@"ROOT\", StringComparison.OrdinalIgnoreCase);
         }
         catch
         {

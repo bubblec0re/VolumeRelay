@@ -38,9 +38,19 @@ public class VolumeRelayEngine : IDisposable
     readonly GgClient _gg = new();
     MMDeviceEnumerator? _enumerator;
     DeviceWatcher? _watcher;
+    bool _watcherRegistered;
     readonly object _lock = new();
     readonly AudioEndpointVolumeNotificationDelegate _pipeHandler;
     System.Timers.Timer? _ggTimer;
+
+    // ---- Event ring buffer (diagnostics) ----
+    // Fixed-size in-memory log of notable engine events, always recording.
+    // Never written to disk; only read when the user copies a diagnostics
+    // report. This is the only record of *how* the delta/context heuristic
+    // behaved on a machine we can't sit in front of.
+    const int EventLogCapacity = 200;
+    readonly Queue<string> _eventLog = new();
+    readonly object _logLock = new();
 
     // Pipe (default / virtual device)
     MMDevice? _pipeDevice;
@@ -139,6 +149,31 @@ public class VolumeRelayEngine : IDisposable
         }
     }
 
+    // ---- Diagnostics surface (read-only snapshots for the report) ----
+
+    public string? PipeId { get { lock (_lock) return _pipeId; } }
+    public float PinValue { get { lock (_lock) return _pinValue; } }
+    public float LastPipeVolume { get { lock (_lock) return _lastPipeVolume; } }
+    public bool LastPipeMute { get { lock (_lock) return _lastPipeMute; } }
+    public bool WatcherRegistered => _watcherRegistered;
+    public GgClient Gg => _gg;
+
+    /// <summary>Snapshot of the event ring buffer, oldest first.</summary>
+    public IReadOnlyList<string> RecentEvents
+    {
+        get { lock (_logLock) return _eventLog.ToList(); }
+    }
+
+    void Log(string message)
+    {
+        var line = $"{DateTime.Now:HH:mm:ss.fff} {message}";
+        lock (_logLock)
+        {
+            _eventLog.Enqueue(line);
+            while (_eventLog.Count > EventLogCapacity) _eventLog.Dequeue();
+        }
+    }
+
     public VolumeRelayEngine()
     {
         _pipeHandler = e => OnPipeChanged(e);
@@ -159,10 +194,12 @@ public class VolumeRelayEngine : IDisposable
         try
         {
             _enumerator.RegisterEndpointNotificationCallback(_watcher);
+            _watcherRegistered = true;
         }
-        catch
+        catch (Exception ex)
         {
             // Hotplug tracking degrades; volume and mute relaying keep working.
+            Log("watcher registration failed: " + ex.Message);
         }
 
         RefreshDevices();
@@ -197,6 +234,8 @@ public class VolumeRelayEngine : IDisposable
         if (_targetId == "auto")
             PollAutoTarget();
 
+        Log($"start: {Devices.Count} render devices, default={_pipeId ?? "none"}, " +
+            $"pin={_pinValue}, watcher={( _watcherRegistered ? "registered" : "NOT registered")}");
         StateChanged?.Invoke();
     }
     // ---- Pipe (default device) ----
@@ -267,7 +306,11 @@ public class VolumeRelayEngine : IDisposable
     {
         lock (_lock)
         {
-            if (_paused || IsPassiveLocked() || !PipeIsVirtualLocked()) return;
+            if (_paused || IsPassiveLocked() || !PipeIsVirtualLocked())
+            {
+                Log($"pipe change ignored: {(_paused ? "paused" : IsPassiveLocked() ? "default is target" : "default not virtual")}");
+                return;
+            }
 
             float newVol = data.MasterVolume;
             bool newMute = data.Muted;
@@ -278,6 +321,7 @@ public class VolumeRelayEngine : IDisposable
             {
                 _lastPipeVolume = newVol;
                 _lastPipeMute = newMute;
+                Log($"suppress own write: vol={newVol:0.000}");
                 return;
             }
 
@@ -301,12 +345,24 @@ public class VolumeRelayEngine : IDisposable
                 {
                     try
                     {
+                        var before = _targetVolume.MasterVolumeLevelScalar;
                         float newTarget = fromSlider
                             ? newVol
-                            : _targetVolume.MasterVolumeLevelScalar + delta;
+                            : before + delta;
                         _targetVolume.MasterVolumeLevelScalar = Math.Clamp(newTarget, 0f, 1f);
+                        Log($"pipe {_lastPipeVolume:0.000}->{newVol:0.000} " +
+                            $"delta={(delta >= 0 ? "+":"")}{delta:0.000} " +
+                            $"context={(fromSlider ? "present" : "absent")} " +
+                            $"target {before:0.000}->{_targetVolume.MasterVolumeLevelScalar:0.000}");
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log("target write failed: " + ex.Message);
+                    }
+                }
+                else
+                {
+                    Log($"pipe {newVol:0.000} (delta {(delta >= 0 ? "+":"")}{delta:0.000}) but no target device");
                 }
 
                 // Reset pipe to pin value
@@ -318,7 +374,10 @@ public class VolumeRelayEngine : IDisposable
                         _pipeVolume.MasterVolumeLevelScalar = _pinValue;
                         _lastPipeVolume = _pinValue;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Log("pipe reset failed: " + ex.Message);
+                    }
                 }
             }
 
@@ -327,7 +386,15 @@ public class VolumeRelayEngine : IDisposable
                 _lastPipeMute = newMute;
                 if (_targetVolume != null)
                 {
-                    try { _targetVolume.Mute = newMute; } catch { }
+                    try
+                    {
+                        _targetVolume.Mute = newMute;
+                        Log($"mute -> {(newMute ? "muted" : "unmuted")} on target");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("mute write failed: " + ex.Message);
+                    }
                 }
             }
 
@@ -341,6 +408,7 @@ public class VolumeRelayEngine : IDisposable
     void OnDefaultDeviceChanged(string flow, string role, string newId)
     {
         if (flow != "Render" || role != "Console") return;
+        Log($"watcher: default render device -> {newId}");
         QueueRefresh();
     }
 
@@ -380,20 +448,32 @@ public class VolumeRelayEngine : IDisposable
     string? QueryGgTarget()
     {
         var id = _gg.GetSelectedOutput();
-        return id != null && _devices.Any(d => d.Id == id) ? id : null;
+        if (id != null && _devices.Any(d => d.Id == id))
+        {
+            Log("auto: GG target " + id);
+            return id;
+        }
+        if (id != null)
+            Log("auto: GG reported " + id + " but it is not an active endpoint");
+        return null;
     }
 
     /// <summary>Fallback when GG is unavailable: the single active physical non-default device.</summary>
     string? HeuristicTarget()
     {
         var phys = _devices.Where(d => !d.IsVirtual && d.Id != _pipeId).ToList();
-        return phys.Count == 1 ? phys[0].Id : null;
+        var id = phys.Count == 1 ? phys[0].Id : null;
+        Log(id == null
+            ? $"auto: heuristic found no single physical non-default device ({phys.Count} candidates)"
+            : "auto: heuristic target " + id);
+        return id;
     }
 
     public void SetTarget(string id)
     {
         lock (_lock)
         {
+            Log("target set to " + id);
             _targetId = id;
             if (id == "auto")
                 _resolvedAutoTargetId = QueryGgTarget() ?? HeuristicTarget();
@@ -450,6 +530,8 @@ public class VolumeRelayEngine : IDisposable
         lock (_lock)
         {
             var (defId, list) = DeviceHelper.GetRenderDevices();
+            if (defId != _pipeId)
+                Log($"refresh: default render device {(defId ?? "none")}{( _pipeId != null ? $" (was {_pipeId})" : "")}");
             _devices = list;
 
             // Re-anchor pipe if the default changed
@@ -493,6 +575,7 @@ public class VolumeRelayEngine : IDisposable
 
     public void SetPaused(bool paused)
     {
+        Log(paused ? "paused" : "resumed");
         lock (_lock) _paused = paused;
         StateChanged?.Invoke();
     }
