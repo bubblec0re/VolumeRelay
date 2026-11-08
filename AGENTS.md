@@ -26,6 +26,9 @@ VolumeRelay/            # the app (all C# lives here)
   DeviceInfo.cs         # record: Id, Name, IsVirtual, IsDefault
   AutoStart.cs          # HKCU Run key toggle
   app.manifest
+  VolumeRelay.ico       # app/tray icon; baked in via <ApplicationIcon> AND embedded as a resource
+docs/
+  windows-packaging.md  # exe metadata, icon, incremental-build traps, verifying a publish
 Spike/                  # throwaway experiment project (device enumeration probing). NOT part of the release.
 dist/VolumeRelay.exe    # last built/published exe (gitignored, keep out of source changes)
 .github/workflows/dotnet-desktop.yml  # CI: publish self-contained exe, auto GitHub Release
@@ -50,6 +53,8 @@ dotnet publish VolumeRelay/VolumeRelay.csproj `
 ```
 
 There is no test project. Verify changes by running `dist\VolumeRelay.exe` (or `build` output) and watching the **tray icon tooltip** — it is the only window into engine state.
+
+Packaging details (exe metadata properties, the icon, incremental-build traps, how to verify the published exe, SmartScreen constraints) live in [`docs/windows-packaging.md`](docs/windows-packaging.md). Read it before touching version metadata, the `.ico`, or the publish format — several plausible-looking property names are silently ignored, and stale artifacts make wrong changes look correct.
 
 - The single-instance mutex means a second launch just shows a message box and exits — kill the previous instance before testing.
 - Relaying is only observable with SteelSeries Sonar/GG running and a virtual device pinned as the Windows default; without that the engine is deliberately passive (see the `RelayMode` states).
