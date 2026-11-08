@@ -1,6 +1,9 @@
 # local .NET SDK install (not project source)
 .dotnet/
 
+# machine-specific build notes (local only)
+BUILD-LOCAL.md
+
 # build output
 bin/
 obj/
