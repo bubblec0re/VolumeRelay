@@ -154,3 +154,9 @@ Audio access uses [NAudio](https://github.com/naudio/NAudio) (`NAudio.Wasapi` 2.
 The SteelSeries GG/Sonar local HTTP API is **undocumented**. Endpoints and JSON shapes may change in any GG update. VolumeRelay treats the integration as best-effort: if it breaks, you lose Auto, not the app.
 
 This project is not affiliated with or endorsed by SteelSeries.
+
+---
+
+## Licensing
+
+VolumeRelay is licensed under the [MIT License](LICENSE). See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for the licenses of bundled dependencies (NAudio).
