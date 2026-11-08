@@ -14,8 +14,9 @@ It lets you use hotkeys and volume knobs to adjust the actual volume of the devi
 
 VolumeRelay fixes this by:
 
-- keeping the virtual default at a fixed pass-through level (**98%**) and
-- applying every volume or mute change to **one physical output device** of your choice.
+- applying every volume or mute change to **the real physical output device** of your choice, trying to follow GG's selected output device.
+- keeping the virtual default at a fixed pass-through level (**98%**)
+
 
 The result: the knob and the Windows UI control the device you actually hear, and the virtual device stays effectively transparent.
 
