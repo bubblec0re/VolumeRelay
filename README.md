@@ -102,6 +102,7 @@ Mute always follows the virtual device: muting it mutes the target, unmuting un-
 
 | Symptom | Fix |
 |---|---|
+| Windows SmartScreen warns about the downloaded exe | Expected — the build is unsigned and its hash is new with every release. Verify first: the SHA-256 in the [release notes](https://github.com/bubblec0re/VolumeRelay/releases) (file Properties → Details, or `Get-FileHash` in PowerShell), the source is open and buildable, and you can also scan the file on VirusTotal. Then choose **More info → Run anyway**. |
 | Knob does nothing and the tooltip says `disabled` | The Windows default output is already a real device. Enable Sonar routing, or select your device manually in the menu. |
 | Tooltip says `GG unavailable` | SteelSeries GG is not running, or its API changed. Start GG, or pick a device manually. |
 | Tooltip says `split routing — pick a device` | Sonar routes different channels to different outputs. Pick a device manually, or set all Sonar channels to one output. |

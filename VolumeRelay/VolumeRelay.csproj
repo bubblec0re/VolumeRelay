@@ -6,10 +6,22 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>VolumeRelay.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <AssemblyCompany>bubblec0re</AssemblyCompany>
+    <Authors>bubblec0re</Authors>
+    <Product>VolumeRelay</Product>
+    <AssemblyTitle>Tray app that redirects volume changes from the Windows default output to a chosen physical device</AssemblyTitle>
+    <Description>Tray app that redirects volume changes from the Windows default output to a chosen physical device</Description>
+    <Copyright>Copyright (c) 2026 bubblec0re</Copyright>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Embedded so TrayApp.CreateIcon() can load it at runtime; the
+         single-file publish has no loose files next to the exe. -->
+    <EmbeddedResource Include="VolumeRelay.ico" />
   </ItemGroup>
 </Project>

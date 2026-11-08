@@ -1,5 +1,4 @@
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace VolumeRelay;
@@ -160,24 +159,17 @@ public class TrayApp : Form
     /// <summary>NotifyIcon.Text throws above 127 chars (63 before .NET 6).</summary>
     static string Clip(string s) => s.Length <= 127 ? s : s[..124] + "…";
 
+    /// <summary>
+    /// Load the app icon from the embedded .ico (see csproj) so the tray icon
+    /// matches the Explorer / SmartScreen dialog icon. The single-file publish
+    /// has no loose files next to the exe, so a disk load is not an option.
+    /// </summary>
     static Icon CreateIcon()
     {
-        using var bmp = new Bitmap(16, 16);
-        using (var g = Graphics.FromImage(bmp))
-        {
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Color.Transparent);
-            using var brush = new SolidBrush(Color.FromArgb(70, 150, 255));
-            g.FillRectangle(brush, 1, 6, 3, 4);
-            using var path = new GraphicsPath();
-            path.AddPolygon(new[]
-            {
-                new Point(4, 6), new Point(8, 2), new Point(8, 14), new Point(4, 10),
-            });
-            g.FillPath(brush, path);
-            using var pen = new Pen(brush, 1.4f);
-            g.DrawArc(pen, 8, 4, 5, 8, -60, 120);
-        }
-        return Icon.FromHandle(bmp.GetHicon());
+        var asm = typeof(TrayApp).Assembly;
+        var res = asm.GetManifestResourceNames()
+            .First(n => n.EndsWith(".ico", StringComparison.OrdinalIgnoreCase));
+        using var s = asm.GetManifestResourceStream(res)!;
+        return new Icon(s, SystemInformation.SmallIconSize);
     }
 }
