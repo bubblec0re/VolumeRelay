@@ -12,7 +12,10 @@
     <AssemblyCompany>bubblec0re</AssemblyCompany>
     <Authors>bubblec0re</Authors>
     <Product>VolumeRelay</Product>
-    <AssemblyTitle>Tray app that redirects volume changes from the Windows default output to a chosen physical device</AssemblyTitle>
+    <!-- Task Manager's "Name" column reads the exe's FileDescription, which the
+         SDK generates from AssemblyTitle. Keep this the short app name; the long
+         description lives in <Description> (the "Comments" field). -->
+    <AssemblyTitle>VolumeRelay</AssemblyTitle>
     <Description>Tray app that redirects volume changes from the Windows default output to a chosen physical device</Description>
     <Copyright>Copyright (c) 2026 bubblec0re</Copyright>
   </PropertyGroup>
