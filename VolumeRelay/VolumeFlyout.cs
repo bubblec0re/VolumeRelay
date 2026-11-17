@@ -329,15 +329,16 @@ public class VolumeFlyout : Form
     protected override void OnMouseDown(MouseEventArgs e)
     {
         base.OnMouseDown(e);
-        _holdMs = AutoHideMs;
         var L = ComputeRects();
         if (_controlsEnabled && L.MuteR.Contains(e.Location))
         {
+            _holdMs = AutoHideMs;
             _engine.SetTargetMute(!_engine.TargetMuted);
             return;
         }
-        if (_controlsEnabled && HitTrack(L.TrackR, e.X, out var v))
+        if (_controlsEnabled && HitTrack(L.TrackR, e.Location, out var v))
         {
+            _holdMs = AutoHideMs;
             _dragging = true;
             Capture = true;
             _dragValue = v;
@@ -351,7 +352,10 @@ public class VolumeFlyout : Form
         base.OnMouseMove(e);
         if (!_dragging) return;
         _holdMs = AutoHideMs;
-        if (HitTrack(ComputeRects().TrackR, e.X, out var v) && v != _dragValue)
+        // X-only while dragging: the value follows the cursor even when it
+        // drifts vertically off the row (mouse is captured for the drag).
+        float v = TrackValue(ComputeRects().TrackR, e.X);
+        if (v != _dragValue)
         {
             _dragValue = v;
             _engine.SetTargetVolume(v);
@@ -369,15 +373,28 @@ public class VolumeFlyout : Form
         UpdateFromEngine();
     }
 
-    /// <summary>Value (0..1) for an x inside the slider's hit area.</summary>
-    bool HitTrack(Rectangle trackR, int x, out float value)
+    /// <summary>True if a click lands on the slider — the bar inflated to the
+    /// thumb's diameter. Returns the value (0..1) for the click's x.</summary>
+    bool HitTrack(Rectangle trackR, Point p, out float value)
+    {
+        // Hit zone = the bar inflated to the thumb's diameter (14px): the
+        // slider is the only clickable part of the card, but it stays easy
+        // to grab. No horizontal growth — the thumb never travels past the
+        // bar's ends. Both axes must be tested: pinning y to the bar's center
+        // (the old code) made the whole card column at that x grabbable.
+        int pad = (LogicalToDeviceUnits(14) - trackR.Height) / 2;
+        var hit = Rectangle.Inflate(trackR, 0, pad);
+        value = TrackValue(trackR, p.X);
+        return hit.Contains(p);
+    }
+
+    /// <summary>Value (0..1) for an x along the slider, clamped to the bar.</summary>
+    float TrackValue(Rectangle trackR, int x)
     {
         int radius = LogicalToDeviceUnits(7);
-        var hit = Rectangle.Inflate(trackR, radius, LogicalToDeviceUnits(10));
         int minCenter = trackR.Left + radius;
         int maxCenter = trackR.Right - radius;
-        value = Math.Clamp((float)(x - minCenter) / Math.Max(1, maxCenter - minCenter), 0f, 1f);
-        return hit.Contains(x, trackR.Y + trackR.Height / 2);
+        return Math.Clamp((float)(x - minCenter) / Math.Max(1, maxCenter - minCenter), 0f, 1f);
     }
 
     protected override void Dispose(bool disposing)
